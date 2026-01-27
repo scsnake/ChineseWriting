@@ -17,23 +17,27 @@ body {
 
 /* Container */
 #app {
-    max-width: 800px;
-    margin: 0 auto;
-    min-height: 100vh;
+    width: 100%;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
     background: white;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Header */
 .header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 20px;
+    padding: 15px;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
 .header h1 {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
 }
 
@@ -49,8 +53,8 @@ body {
 .btn {
     min-height: 44px;
     min-width: 44px;
-    padding: 12px 24px;
-    font-size: 18px;
+    padding: 10px 20px;
+    font-size: 16px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -86,6 +90,7 @@ body {
 
 .btn-danger:active {
     background: #c0392b;
+    transform: scale(0.98);
 }
 
 .btn-large {
@@ -94,20 +99,199 @@ body {
     padding: 16px;
 }
 
+.btn-full {
+    width: 100%;
+    display: block;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
 /* Content Area */
 .content {
     padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* Important for nested flex scrolling */
+}
+
+.content.full-height {
+    padding: 0;
+    height: 100%;
 }
 
 /* Home Page - Lesson Selector */
 .lesson-selector {
-    margin-bottom: 25px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .lesson-selector h2 {
     font-size: 22px;
-    margin-bottom: 15px;
+    margin: 15px 20px;
     color: #667eea;
+    display: none;
+    /* Hide H2 in fullscreen mode layout */
+}
+
+/* Split Layout */
+.lesson-selection-container {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    /* Take full remaining height */
+    overflow: hidden;
+}
+
+/* Left Panel */
+.selection-sidebar {
+    width: 33.33%;
+    min-width: 280px;
+    max-width: 350px;
+    /* Fixed width */
+    background: #f8f8f8;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    font-weight: 600;
+    font-size: 16px;
+    color: #555;
+}
+
+.filter-select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    background: white;
+}
+
+.selection-stats {
+    padding: 15px 0;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.selection-stats p {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 14px;
+    width: 100%;
+}
+
+/* Right Panel */
+.selection-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+}
+
+/* Sidebar Test Config */
+.test-config-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.config-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.config-row-sidebar {
+    margin-bottom: 10px;
+}
+
+.config-label-small {
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.config-input-small {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.radio-group-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-item-small {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.radio-item-small input {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 767px) {
+    #app {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+    }
+
+    .lesson-selection-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .selection-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .selection-content {
+        height: 500px;
+        /* Limit height on mobile */
+    }
+
+    .lesson-selector h2 {
+        display: block;
+        /* Show title on mobile */
+    }
 }
 
 .grade-group {
@@ -258,6 +442,14 @@ body {
     margin-right: 12px;
 }
 
+/* Test Page Container Wrapper */
+.test-container-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
 /* Test Page */
 .test-container {
     display: flex;
@@ -307,7 +499,7 @@ body {
     border: 2px solid #667eea;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 canvas {
@@ -445,7 +637,7 @@ canvas {
     .answer-grid {
         grid-template-columns: repeat(3, 1fr);
     }
-    
+
     canvas {
         width: 400px;
         height: 400px;

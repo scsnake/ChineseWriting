@@ -17,6 +17,13 @@ const TestPage = {
             </div>
             
             <div class="test-actions">
+                <button 
+                    v-if="currentIndex > 0" 
+                    @click="prevQuestion" 
+                    class="btn btn-secondary"
+                >
+                    ← 上一題
+                </button>
                 <button @click="clearCanvas" class="btn btn-secondary">
                     清除
                 </button>
@@ -61,7 +68,7 @@ const TestPage = {
         initTest() {
             // Get session and questions from route params
             this.sessionId = this.$route.params.sessionId;
-            
+
             try {
                 this.questions = JSON.parse(this.$route.params.questions);
             } catch (error) {
@@ -87,20 +94,12 @@ const TestPage = {
             this.$refs.canvas.clear();
         },
 
-        async nextQuestion() {
+        async saveCurrentAnswer() {
             const canvas = this.$refs.canvas;
-            
-            // Check if canvas is empty
-            if (canvas.isEmpty()) {
-                const confirm = window.confirm('尚未作答，確定要繼續嗎？');
-                if (!confirm) return;
-            }
+            if (canvas.isEmpty()) return; // Don't save empty canvas
 
             try {
-                // Get canvas blob
                 const blob = await canvas.getBlob();
-                
-                // Save answer to IndexedDB
                 await StorageService.saveAnswer(
                     this.sessionId,
                     this.currentIndex,
@@ -110,6 +109,35 @@ const TestPage = {
                     this.currentQuestion.contextWord,
                     blob
                 );
+            } catch (error) {
+                console.error('Error saving answer:', error);
+                // Non-blocking error
+            }
+        },
+
+        async prevQuestion() {
+            // Save current work before going back
+            await this.saveCurrentAnswer();
+
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+                this.clearCanvas();
+                // TODO: Load previous answer if exists
+            }
+        },
+
+        async nextQuestion() {
+            const canvas = this.$refs.canvas;
+
+            // Check if canvas is empty
+            if (canvas.isEmpty()) {
+                const confirm = window.confirm('尚未作答，確定要繼續嗎？');
+                if (!confirm) return;
+            }
+
+            try {
+                // Save answer
+                await this.saveCurrentAnswer();
 
                 // Move to next question or complete test
                 if (this.isLastQuestion) {
@@ -119,8 +147,8 @@ const TestPage = {
                     this.clearCanvas();
                 }
             } catch (error) {
-                console.error('Error saving answer:', error);
-                alert('儲存答案時發生錯誤');
+                console.error('Error saving/next:', error);
+                alert('發生錯誤');
             }
         },
 

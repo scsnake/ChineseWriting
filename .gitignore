@@ -6,3 +6,6 @@ tmp/
 .venv/
 env/
 *.log
+
+# Helper scripts
+*.py

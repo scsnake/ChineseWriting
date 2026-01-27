@@ -2,75 +2,61 @@
 const HomePage = {
     name: 'HomePage',
     template: `
-        <div>
+        <div class="test-container-wrapper">
             <div class="header">
                 <h1>國字注音練習</h1>
             </div>
             
-            <div class="content">
-                <lesson-selector v-model="selectedLessons"></lesson-selector>
-                
-                <div class="test-config">
-                    <div class="config-row">
-                        <label class="config-label">📝 題數</label>
-                        <input 
-                            v-model.number="testCount" 
-                            type="number" 
-                            min="1" 
-                            max="50"
-                            class="config-input"
-                            placeholder="輸入題數"
-                        />
-                    </div>
-                    
-                    <div class="config-row">
-                        <label class="config-label">✍️ 測驗類型</label>
-                        <div class="radio-group">
-                            <div class="radio-item">
+            <div class="content full-height">
+                <lesson-selector v-model="selectedLessons">
+                    <template #sidebar-extras>
+                        <div class="test-config-sidebar">
+                            <h3 class="config-section-title">📝 測驗設定</h3>
+                            
+                            <div class="config-row-sidebar">
+                                <label class="config-label-small">題數</label>
                                 <input 
-                                    type="radio" 
-                                    id="type-char" 
-                                    value="char" 
-                                    v-model="testType"
+                                    v-model.number="testCount" 
+                                    type="number" 
+                                    min="1" 
+                                    max="50"
+                                    class="config-input-small"
+                                    placeholder="輸入題數"
                                 />
-                                <label for="type-char">看注音寫國字</label>
                             </div>
-                            <div class="radio-item">
-                                <input 
-                                    type="radio" 
-                                    id="type-zhuyin" 
-                                    value="zhuyin" 
-                                    v-model="testType"
-                                />
-                                <label for="type-zhuyin">看國字寫注音</label>
+                            
+                            <div class="config-row-sidebar">
+                                <label class="config-label-small">題型</label>
+                                <div class="radio-group-sidebar">
+                                    <label class="radio-item-small">
+                                        <input type="radio" value="char" v-model="testType"> 看注音寫國字
+                                    </label>
+                                    <label class="radio-item-small">
+                                        <input type="radio" value="zhuyin" v-model="testType"> 看國字寫注音
+                                    </label>
+                                    <label class="radio-item-small">
+                                        <input type="radio" value="mixed" v-model="testType"> 混合題型
+                                    </label>
+                                </div>
                             </div>
-                            <div class="radio-item">
-                                <input 
-                                    type="radio" 
-                                    id="type-mixed" 
-                                    value="mixed" 
-                                    v-model="testType"
-                                />
-                                <label for="type-mixed">混合題型</label>
-                            </div>
+                            
+                            <button 
+                                @click="startTest" 
+                                :disabled="!canStartTest"
+                                class="btn btn-primary btn-full mt-10"
+                            >
+                                開始測驗
+                            </button>
+                            
+                            <button 
+                                @click="goToReview" 
+                                class="btn btn-secondary btn-full mt-10"
+                            >
+                                歷史紀錄
+                            </button>
                         </div>
-                    </div>
-                </div>
-                
-                <button 
-                    @click="startTest" 
-                    :disabled="!canStartTest"
-                    class="btn btn-primary btn-large"
-                >
-                    開始測驗
-                </button>
-                
-                <button 
-                    @click="goToReview" 
-                    class="btn btn-secondary btn-large mt-20"
-                >
-                    查看歷史紀錄
-                </button>
+                    </template>
+                </lesson-selector>
             </div>
         </div>
     `,
