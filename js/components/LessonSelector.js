@@ -45,7 +45,17 @@ const LessonSelector = {
 
                     <div v-for="group in groupedData" :key="group.id" class="grade-group">
                         <div class="grade-header" @click="toggleGroup(group.id)">
-                            <span class="grade-title">{{ group.label }}</span>
+                            <div class="grade-header-left">
+                                <input 
+                                    type="checkbox" 
+                                    :checked="isGroupSelected(group)"
+                                    :indeterminate.prop="isGroupIndeterminate(group)"
+                                    @click.stop="toggleGroupSelection(group)"
+                                    class="grade-checkbox"
+                                />
+                                <span class="grade-title">{{ group.label }}</span>
+                                <span v-if="getSelectedChaptersLabel(group)" class="selected-chapters-label">: {{ getSelectedChaptersLabel(group) }}</span>
+                            </div>
                             <span class="grade-arrow" :class="{ expanded: expandedGroups[group.id] }">▶</span>
                         </div>
                         
@@ -250,6 +260,61 @@ const LessonSelector = {
                 current.push(lessonId);
             }
             this.selectedLessons = current;
+        },
+
+        isGroupSelected(group) {
+            if (!group.lessons || group.lessons.length === 0) return false;
+            return group.lessons.every(lesson => this.selectedLessons.includes(lesson.id));
+        },
+
+        isGroupIndeterminate(group) {
+            if (!group.lessons || group.lessons.length === 0) return false;
+            const selectedCount = group.lessons.filter(lesson => this.selectedLessons.includes(lesson.id)).length;
+            return selectedCount > 0 && selectedCount < group.lessons.length;
+        },
+
+        toggleGroupSelection(group) {
+            const allSelected = this.isGroupSelected(group);
+            let newSelection = [...this.selectedLessons];
+
+            if (allSelected) {
+                // Unselect all lessons in this group
+                group.lessons.forEach(lesson => {
+                    const idx = newSelection.indexOf(lesson.id);
+                    if (idx > -1) newSelection.splice(idx, 1);
+                });
+            } else {
+                // Select all lessons in this group
+                group.lessons.forEach(lesson => {
+                    if (!newSelection.includes(lesson.id)) {
+                        newSelection.push(lesson.id);
+                    }
+                });
+            }
+            this.selectedLessons = newSelection;
+        },
+
+        getSelectedChaptersLabel(group) {
+            const selectedLessons = group.lessons.filter(lesson =>
+                this.selectedLessons.includes(lesson.id)
+            );
+
+            if (selectedLessons.length === 0) return '';
+
+            // Extract chapter numbers from "第X課" format
+            const chapterNums = selectedLessons
+                .map(lesson => {
+                    const match = lesson.chapter.match(/第(.+?)課/);
+                    return match ? match[1] : null;
+                })
+                .filter(num => num !== null);
+
+            if (chapterNums.length === 0) return '';
+
+            // Sort by Chinese number value
+            chapterNums.sort((a, b) => this.chineseToNumber(a) - this.chineseToNumber(b));
+
+            return `第 ${chapterNums.join('、')} 課`;
         },
 
         clearSelection() {
