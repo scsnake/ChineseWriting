@@ -129,7 +129,7 @@
 
 This project was developed with AI assistance:
 - **AI Assistant**: Claude (Anthropic)
-- **Models Used**: Claude Opus 4.5, Claude Sonnet 4.5
+- **Models Used**: Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro
 - **Development Approach**: Iterative architecture design and implementation
 - **Code Review**: AI-assisted debugging and optimization
 

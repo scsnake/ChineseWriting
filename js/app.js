@@ -7,19 +7,19 @@ class SimpleRouter {
         this.routes = routes;
         this.currentRoute = { name: 'home', params: {} };
         this.component = null;
-        
+
         window.addEventListener('hashchange', () => {
             this.parseRoute();
         });
-        
+
         // Parse initial route
         this.parseRoute();
     }
-    
+
     parseRoute() {
         const hash = window.location.hash.slice(1) || '/';
         const [path, queryString] = hash.split('?');
-        
+
         // Find matching route
         const route = this.routes.find(r => {
             if (r.path === path) return true;
@@ -27,13 +27,13 @@ class SimpleRouter {
             const pathParts = path.split('/');
             const routeParts = r.path.split('/');
             if (pathParts.length === routeParts.length) {
-                return routeParts.every((part, i) => 
+                return routeParts.every((part, i) =>
                     part.startsWith(':') || part === pathParts[i]
                 );
             }
             return false;
         });
-        
+
         if (route) {
             // Parse params from query string
             const params = {};
@@ -43,7 +43,7 @@ class SimpleRouter {
                     params[decodeURIComponent(key)] = decodeURIComponent(value);
                 });
             }
-            
+
             this.currentRoute = {
                 name: route.name,
                 params: params,
@@ -56,7 +56,7 @@ class SimpleRouter {
             this.component = HomePage;
         }
     }
-    
+
     push(options) {
         if (typeof options === 'string') {
             window.location.hash = options;
@@ -65,17 +65,17 @@ class SimpleRouter {
             const route = this.routes.find(r => r.name === options.name);
             if (route) {
                 let path = route.path;
-                
+
                 // Build query string from params
                 if (options.params && Object.keys(options.params).length > 0) {
                     const queryParams = Object.entries(options.params)
-                        .map(([key, value]) => 
+                        .map(([key, value]) =>
                             `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
                         )
                         .join('&');
                     path += '?' + queryParams;
                 }
-                
+
                 window.location.hash = path;
             }
         }
@@ -86,7 +86,8 @@ class SimpleRouter {
 const routes = [
     { path: '/', name: 'home', component: HomePage },
     { path: '/test', name: 'test', component: TestPage },
-    { path: '/review', name: 'review', component: ReviewPage }
+    { path: '/review', name: 'review', component: ReviewPage },
+    { path: '/questionable', name: 'questionable', component: QuestionableListPage }
 ];
 
 // Create router instance
@@ -106,7 +107,7 @@ const RouterView = {
         this.updateHandler = () => {
             this.currentComponent = router.component;
         };
-        
+
         window.addEventListener('hashchange', this.updateHandler);
     },
     beforeUnmount() {
@@ -136,7 +137,7 @@ const app = createApp({
         StorageService.init().catch(error => {
             console.error('Failed to initialize storage:', error);
         });
-        
+
         // Load initial data
         DataService.loadData().catch(error => {
             console.error('Failed to load data:', error);
@@ -149,6 +150,7 @@ app.component('RouterView', RouterView);
 app.component('HomePage', HomePage);
 app.component('TestPage', TestPage);
 app.component('ReviewPage', ReviewPage);
+app.component('QuestionableListPage', QuestionableListPage);
 app.component('LessonSelector', LessonSelector);
 app.component('HandwritingCanvas', HandwritingCanvas);
 

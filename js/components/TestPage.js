@@ -5,6 +5,12 @@ const TestPage = {
         <div class="test-container">
             <div class="progress-bar">
                 第 {{ currentIndex + 1 }} 題 / 共 {{ questions.length }} 題
+                <button class="btn-star" @click="toggleStar" :class="{ 'active': isStarred }">
+                    {{ isStarred ? '★' : '☆' }}
+                </button>
+                <button class="btn-star btn-question" @click="toggleQuestionable" :class="{ 'active': isQuestionable }">
+                    {{ isQuestionable ? '?' : '?' }}
+                </button>
             </div>
             
             <div class="question-display">
@@ -41,7 +47,9 @@ const TestPage = {
             sessionId: '',
             questions: [],
             currentIndex: 0,
-            canvasSize: 300
+            canvasSize: 300,
+            isStarred: false,
+            isQuestionable: false
         };
     },
     computed: {
@@ -61,6 +69,11 @@ const TestPage = {
         this.adjustCanvasSize();
         window.addEventListener('resize', this.adjustCanvasSize);
     },
+    watch: {
+        currentIndex() {
+            this.checkStarStatus();
+        }
+    },
     beforeUnmount() {
         window.removeEventListener('resize', this.adjustCanvasSize);
     },
@@ -71,6 +84,7 @@ const TestPage = {
 
             try {
                 this.questions = JSON.parse(this.$route.params.questions);
+                this.checkStarStatus();
             } catch (error) {
                 console.error('Error parsing questions:', error);
                 alert('測驗資料錯誤');
@@ -78,15 +92,48 @@ const TestPage = {
             }
         },
 
+        async checkStarStatus() {
+            if (!this.currentQuestion) return;
+            try {
+                this.isStarred = await StorageService.isStarred(this.currentQuestion);
+                this.isQuestionable = await StorageService.isQuestionable(this.currentQuestion);
+            } catch (e) {
+                console.error('Error checking status:', e);
+            }
+        },
+
+        async toggleStar() {
+            if (!this.currentQuestion) return;
+            try {
+                this.isStarred = await StorageService.toggleStar(this.currentQuestion);
+            } catch (e) {
+                console.error('Error toggling star:', e);
+            }
+        },
+
+        async toggleQuestionable() {
+            if (!this.currentQuestion) return;
+            try {
+                this.isQuestionable = await StorageService.toggleQuestionable(this.currentQuestion);
+            } catch (e) {
+                console.error('Error toggling questionable:', e);
+            }
+        },
+
         adjustCanvasSize() {
-            // Adjust canvas size based on screen width
+            // Adjust canvas size based on screen width and height availability
             const maxWidth = window.innerWidth - 40; // 20px padding on each side
-            if (maxWidth < 300) {
-                this.canvasSize = maxWidth;
-            } else if (maxWidth > 400) {
-                this.canvasSize = 400;
-            } else {
+            // Reserve space for header (~60px), progress (~50px), word (~100px), buttons (~80px) + padding
+            const maxHeight = window.innerHeight - 350;
+
+            const availableSize = Math.min(maxWidth, maxHeight);
+
+            if (availableSize < 300) {
                 this.canvasSize = 300;
+            } else if (availableSize > 800) {
+                this.canvasSize = 800; // Cap at 800px instead of 400px
+            } else {
+                this.canvasSize = availableSize;
             }
         },
 

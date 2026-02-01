@@ -49,6 +49,20 @@ const HomePage = {
                             </button>
                             
                             <button 
+                                @click="startStarredTest" 
+                                class="btn btn-warning btn-full mt-10"
+                            >
+                                ★ 練習標記
+                            </button>
+                            
+                            <button 
+                                @click="goToQuestionableList" 
+                                class="btn btn-danger btn-full mt-10"
+                            >
+                                ? 查看標記
+                            </button>
+                            
+                            <button 
                                 @click="goToReview" 
                                 class="btn btn-secondary btn-full mt-10"
                             >
@@ -114,6 +128,49 @@ const HomePage = {
                 console.error('Error starting test:', error);
                 alert('啟動測驗時發生錯誤');
             }
+        },
+
+        async startStarredTest() {
+            try {
+                const stars = await StorageService.getStarredItems();
+                if (stars.length === 0) {
+                    alert('尚無標記題目');
+                    return;
+                }
+
+                // Convert starred items to questions format
+                const questions = stars.map(item => ({
+                    id: item.id,
+                    type: item.type,
+                    targetChar: item.targetChar,
+                    targetZhuyin: item.targetZhuyin,
+                    contextWord: item.contextWord,
+                    lessonTitle: '標記題目'
+                }));
+
+                // Create session
+                const session = await StorageService.createSession(
+                    ['starred'],
+                    'mixed',
+                    questions.length
+                );
+
+                // Navigate
+                this.$router.push({
+                    name: 'test',
+                    params: {
+                        sessionId: session.id,
+                        questions: JSON.stringify(questions)
+                    }
+                });
+            } catch (error) {
+                console.error('Error starting starred test:', error);
+                alert('發生錯誤');
+            }
+        },
+
+        async goToQuestionableList() {
+            this.$router.push({ name: 'questionable' });
         },
 
         goToReview() {

@@ -474,6 +474,51 @@ body {
     font-size: 20px;
     font-weight: 600;
     color: #667eea;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-star {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #ccc;
+    padding: 0 5px;
+    transition: transform 0.2s, color 0.2s;
+    line-height: 1;
+}
+
+.btn-star.active {
+    color: #f1c40f;
+    transform: scale(1.1);
+}
+
+.btn-star:active {
+    transform: scale(0.95);
+}
+
+.btn-warning {
+    background: #f1c40f;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-warning:active {
+    background: #d4ac0d;
+    transform: scale(0.98);
+}
+
+.btn-question {
+    font-weight: bold;
+    color: #ccc;
+}
+
+.btn-question.active {
+    color: #e74c3c;
+    transform: scale(1.1);
 }
 
 .question-display {
@@ -648,10 +693,74 @@ canvas {
         grid-template-columns: repeat(3, 1fr);
     }
 
-    canvas {
-        width: 400px;
-        height: 400px;
-    }
+    /* HTML canvas attributes will control size now */
+}
+
+/* Questionable List Styles */
+.questionable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.questionable-item {
+    background: #fdf2f2;
+    /* Light red background */
+    border: 1px solid #fab1a0;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-word {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2d3436;
+    margin-bottom: 5px;
+}
+
+.item-detail {
+    font-size: 16px;
+    color: #636e72;
+}
+
+.item-time {
+    font-size: 12px;
+    color: #b2bec3;
+    margin-top: 5px;
+}
+
+.btn-remove {
+    background: white;
+    border: 1px solid #fab1a0;
+    color: #e74c3c;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.btn-remove:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.no-data {
+    text-align: center;
+    padding: 50px;
+    color: #a0a0a0;
+    font-size: 18px;
 }
 
 /* Prevent text selection during touch */
