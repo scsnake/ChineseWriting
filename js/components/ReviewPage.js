@@ -2,7 +2,7 @@
 const ReviewPage = {
     name: 'ReviewPage',
     template: `
-        <div>
+        <div class="page-wrapper">
             <div class="header">
                 <h1>歷史紀錄</h1>
             </div>
@@ -90,7 +90,7 @@ const ReviewPage = {
     },
     async mounted() {
         await this.loadSessions();
-        
+
         // Check if navigated with sessionId
         if (this.$route.params.sessionId) {
             this.viewSession(this.$route.params.sessionId);
@@ -100,7 +100,7 @@ const ReviewPage = {
         async loadSessions() {
             try {
                 this.sessions = await StorageService.getAllSessions();
-                
+
                 // Pre-load lesson titles for all sessions
                 for (const session of this.sessions) {
                     const titles = await DataService.getLessonTitles(session.lessonIds);
@@ -115,10 +115,10 @@ const ReviewPage = {
         async viewSession(sessionId) {
             this.selectedSessionId = sessionId;
             this.loading = true;
-            
+
             try {
                 const answers = await StorageService.getAnswersBySession(sessionId);
-                
+
                 // Convert blobs to URLs for display
                 this.answers = await Promise.all(
                     answers.map(async (answer) => ({
@@ -141,7 +141,7 @@ const ReviewPage = {
                     URL.revokeObjectURL(answer.imageUrl);
                 }
             });
-            
+
             this.selectedSessionId = null;
             this.answers = [];
         },
@@ -149,7 +149,7 @@ const ReviewPage = {
         async deleteSession(sessionId) {
             const confirm = window.confirm('確定要刪除此測驗紀錄嗎？');
             if (!confirm) return;
-            
+
             try {
                 await StorageService.deleteSession(sessionId);
                 await this.loadSessions();
@@ -163,7 +163,7 @@ const ReviewPage = {
         async deleteAllSessions() {
             const confirm = window.confirm(`確定要刪除全部 ${this.sessions.length} 筆測驗紀錄嗎？此操作無法復原。`);
             if (!confirm) return;
-            
+
             try {
                 // Delete all sessions one by one
                 for (const session of this.sessions) {
@@ -191,10 +191,10 @@ const ReviewPage = {
 
         formatLessons(lessonIds) {
             // Try to get cached lesson titles
-            const sessionId = this.sessions.find(s => 
+            const sessionId = this.sessions.find(s =>
                 JSON.stringify(s.lessonIds) === JSON.stringify(lessonIds)
             )?.id;
-            
+
             if (sessionId && this.lessonTitles[sessionId]) {
                 const titles = this.lessonTitles[sessionId];
                 if (titles.length <= 3) {
@@ -203,7 +203,7 @@ const ReviewPage = {
                     return `${titles.slice(0, 2).join('、')}等${titles.length}課`;
                 }
             }
-            
+
             return `${lessonIds.length}個課文`;
         },
 
