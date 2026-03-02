@@ -1,11 +1,11 @@
 // Data Service for loading and managing words.json
 const DataService = {
     data: null,
-    
+
     // Load words.json
     async loadData() {
         if (this.data) return this.data;
-        
+
         try {
             const response = await fetch('words.json');
             if (!response.ok) throw new Error('Failed to load words.json');
@@ -23,51 +23,71 @@ const DataService = {
         return data;
     },
 
-    // Get lesson by ID (format: "grade_semester_book_chapter")
+    // Get lesson by ID (format: "publisher_twyear_grade_semester_chapter")
     async getLessonById(lessonId) {
         const data = await this.loadData();
-        const [gradeName, semesterName, bookType, chapter] = lessonId.split('_');
-        
-        for (const gradeGroup of data) {
-            if (gradeGroup.grade === gradeName && gradeGroup.semester === semesterName && gradeGroup.book_type === bookType) {
-                return gradeGroup.lessons.find(lesson => lesson.chapter === chapter);
-            }
-        }
-        return null;
+        const [publisher, twYear, grade, semester, chapter] = lessonId.split('_');
+
+        const group = data.find(g => g.publisher === publisher && g.tw_year === twYear);
+        if (!group) return null;
+
+        const book = group.books.find(b => b.grade === grade && b.semester === semester);
+        if (!book) return null;
+
+        return book.lessons.find(l => l.chapter === chapter);
     },
 
     // Get all characters from selected lessons
     async getCharactersFromLessons(lessonIds) {
         const characters = [];
-        
+
         for (const lessonId of lessonIds) {
             const lesson = await this.getLessonById(lessonId);
-            if (lesson && lesson.new_characters) {
+            if (lesson && lesson.parts && lesson.parts.vocabulary_and_sentences) {
                 // Add each character with its context
-                lesson.new_characters.forEach(charData => {
+                lesson.parts.vocabulary_and_sentences.forEach(item => {
                     characters.push({
-                        char: charData.char,
-                        zhuyin: charData.zhuyin,
-                        words: charData.words || [],
+                        char: item['生字國字'],
+                        zhuyin: item['生字注音'],
+                        words: item['words'] || (item['本課詞語國字'] ? [item['本課詞語國字']] : []),
                         lessonId: lessonId,
                         lessonTitle: lesson.title
                     });
                 });
             }
         }
-        
+
         return characters;
     },
 
     // Create lesson ID from components
-    createLessonId(grade, semester, bookType, chapter) {
-        return `${grade}_${semester}_${bookType}_${chapter}`;
+    createLessonId(publisher, twYear, grade, semester, chapter) {
+        return `${publisher}_${twYear}_${grade}_${semester}_${chapter}`;
     },
 
     // Parse lesson ID
     parseLessonId(lessonId) {
-        const [grade, semester, bookType, chapter] = lessonId.split('_');
-        return { grade, semester, bookType, chapter };
+        const [publisher, twYear, grade, semester, chapter] = lessonId.split('_');
+        return { publisher, twYear, grade, semester, chapter };
+    },
+
+    // Get similar_shapes groups from selected lessons
+    async getSimilarShapesFromLessons(lessonIds) {
+        const groups = [];
+
+        for (const lessonId of lessonIds) {
+            const lesson = await this.getLessonById(lessonId);
+            if (!lesson) continue;
+            const pa = lesson.parts && lesson.parts.phonetic_analysis;
+            if (!pa || !pa.similar_shapes) continue;
+
+            for (const group of pa.similar_shapes) {
+                if (!Array.isArray(group) || group.length < 2) continue;
+                groups.push({ group, lessonId, lessonTitle: lesson.title });
+            }
+        }
+
+        return groups;
     },
 
     // Get lesson title by ID

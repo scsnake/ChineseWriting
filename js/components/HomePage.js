@@ -45,7 +45,15 @@ const HomePage = {
                                 :disabled="!canStartTest"
                                 class="btn btn-primary btn-full mt-10"
                             >
-                                開始測驗
+                                生字測驗
+                            </button>
+                            
+                            <button 
+                                @click="startSimilarShapesTest" 
+                                :disabled="selectedLessons.length === 0"
+                                class="btn btn-teal btn-full mt-10"
+                            >
+                                🔡 形近字測驗
                             </button>
                             
                             <button 
@@ -89,7 +97,33 @@ const HomePage = {
             return this.selectedLessons.length > 0 && this.testCount > 0;
         }
     },
+    mounted() {
+        // Restore previous selection from sessionStorage
+        try {
+            const saved = sessionStorage.getItem('homepageState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                if (state.selectedLessons) this.selectedLessons = state.selectedLessons;
+                if (state.testCount) this.testCount = state.testCount;
+                if (state.testType) this.testType = state.testType;
+            }
+        } catch (e) { /* ignore */ }
+    },
+    watch: {
+        selectedLessons(v) { this._saveState(); },
+        testCount(v) { this._saveState(); },
+        testType(v) { this._saveState(); },
+    },
     methods: {
+        _saveState() {
+            try {
+                sessionStorage.setItem('homepageState', JSON.stringify({
+                    selectedLessons: this.selectedLessons,
+                    testCount: this.testCount,
+                    testType: this.testType
+                }));
+            } catch (e) { /* ignore */ }
+        },
         async startTest() {
             if (!this.canStartTest) {
                 alert('請選擇課文並輸入題數');
@@ -127,6 +161,32 @@ const HomePage = {
             } catch (error) {
                 console.error('Error starting test:', error);
                 alert('啟動測驗時發生錯誤');
+            }
+        },
+
+        async startSimilarShapesTest() {
+            if (this.selectedLessons.length === 0) {
+                alert('請先選擇課文');
+                return;
+            }
+            try {
+                const questions = await TestEngine.generateSimilarShapesTest(this.selectedLessons);
+                if (questions.length === 0) {
+                    alert('所選課文沒有形近字資料');
+                    return;
+                }
+                const session = await StorageService.createSession(
+                    this.selectedLessons,
+                    'similar_shapes',
+                    questions.length
+                );
+                this.$router.push({
+                    name: 'test',
+                    params: { sessionId: session.id, questions: JSON.stringify(questions) }
+                });
+            } catch (error) {
+                console.error('Error starting similar shapes test:', error);
+                alert(error.message || '啟動測驗時發生錯誤');
             }
         },
 

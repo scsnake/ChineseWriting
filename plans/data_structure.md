@@ -1,0 +1,171 @@
+# 詞庫資料結構說明 (Data Structure)
+
+本專案使用 JSON 檔案 (例如 `國重2下.json` / `words.json`) 作為詞庫來源。這份文件說明了 JSON 的結構以及各個欄位的用途，為未來的模組擴充（形近字、多音字、成語練習等題型）提供參考依據。
+
+## 頂層結構 (Top-Level Structure)
+
+資料的最外層是一個陣列，包含各個出版商與學年度的物件。每個物件內有一個 `books` 陣列，負責收錄不同年級與學期的課本內容。此結構與 `words.json` 保持一致，以利 App 統一讀取。
+
+```json
+[
+  {
+    "publisher": "康軒",
+    "tw_year": "114",
+    "books": [
+      {
+        "grade": "二年級",
+        "semester": "下學期",
+        "lessons": [ ... ]
+      }
+    ]
+  }
+]
+```
+
+### 欄位說明
+* `publisher` (String): 出版社名稱（例如：「康軒」）。
+* `tw_year` (String): 適用之民國學年度（例如：「114」）。
+* `books` (Array): 收錄各年級/學期課本資料的陣列。
+  * `grade` (String): 適用年級（例如：「二年級」）。
+  * `semester` (String): 適用學期（例如：「下學期」、「上學期」）。
+  * `lessons` (Array): 該學期內的所有課文陣列。
+
+### 欄位說明
+* `publisher` (String): 出版社名稱（例如：「康軒」）。
+* `tw_year` (String): 適用之民國學年度（例如：「114」）。
+* `grade` (String): 適用年級（例如：「二年級」）。
+* `semester` (String): 適用學期（例如：「下學期」、「上學期」）。
+* `lessons` (Array): 該學期內的所有課文陣列。
+
+---
+
+## 課文結構 (Lesson Structure)
+
+`lessons` 陣列中的每個物件代表一課，包含課名與該課的學習內容 (`parts`)。
+
+```json
+{
+  "lesson_title": "第一課 春天的顏色",
+  "parts": { ... }
+}
+```
+
+### 欄位說明
+* `lesson_title` (String): 課次與課文名稱。
+* `parts` (Object): 該課的內容主體，分成生字詞語、音韻分析、關鍵句型與延伸成語四個部分。
+
+---
+
+## 學習內容結構 (Parts Structure)
+
+`parts` 物件包含以下四個主要子物件/陣列，對應不同的練習題型需求。
+
+### 1. `vocabulary_and_sentences` (生字與詞語)
+
+生字與本課重點詞語列表，也是最基本的「看注音寫國字 / 看國字寫注音」資料來源。
+
+```json
+"vocabulary_and_sentences": [
+  {
+    "生字": "顏(ㄧㄢˊ)",
+    "本課詞語": "顏色(ㄧㄢˊ ㄙㄜˋ)",
+    "詞語解釋": "色彩。",
+    "造句": "天上的彩虹，共有七種顏色，真美麗。"
+  }
+]
+```
+* **用途**: 基本生字測驗、詞語解釋配對題。
+
+### 2. `phonetic_analysis` (音韻與字形分析)
+
+包含「形近字」及「多音字」的分析，為進階的辨析題型提供題庫。
+
+#### A. `similar_shapes` (形近字)
+將外觀相似的字元依群組 (Group) 劃分。這是一個二維陣列（陣列的陣列）。
+
+```json
+"similar_shapes": [
+  [
+    {
+      "character": "池(ㄔˊ)",
+      "example_phrases": ["池塘", "水池"]
+    },
+    {
+      "character": "地(ㄉㄧˋ)",
+      "example_phrases": ["地圖", "地球"]
+    }
+  ],
+  [
+    {
+      "character": "塘(ㄊㄤˊ)",
+      "example_phrases": ["池塘", "水塘"]
+    },
+    {
+      "character": "糖(ㄊㄤˊ)",
+      "example_phrases": ["糖果", "冰糖"]
+    }
+  ]
+]
+```
+* **用途**: `Similar Characters Recognition` 測驗。系統可從同一 Group 中的每個 character 選出一個 example_phrase 出題，讓學生在相似字之間做辨析練習。
+
+#### B. `multiple_phonetics` (多音字)
+列出具有多個讀音的國字，及該讀音對應的詞語。
+
+```json
+"multiple_phonetics": [
+  {
+    "character": "興",
+    "variants": [
+      {
+        "phonetic": "ㄒㄧㄥˋ",
+        "example_phrases": ["高興", "興趣"]
+      },
+      {
+        "phonetic": "ㄒㄧㄥ",
+        "example_phrases": ["興奮", "興建"]
+      }
+    ]
+  }
+]
+```
+* **用途**: `Multiple Phonetics` 測驗。針對多音字出題，系統可針對不同 variants 各抽出詞語，請學生寫出對應的注音。
+
+### 3. `key_sentences` (關鍵句型)
+
+分為短語練習 (`phrase_practice`) 與句型練習 (`sentence_practice`)。
+
+```json
+"key_sentences": {
+  "phrase_practice": [
+    {
+      "phrase": "跳出池塘",
+      "structure": "(動詞)(地點)",
+      "examples": ["走入迷宮", "飛出鳥巢"]
+    }
+  ],
+  "sentence_practice": [
+    {
+      "phrase": "五顏六色",
+      "original_sentence": "小燕子從很遠的地方飛來，發現到處是五顏六色的景色。",
+      "examples": ["園遊會到處充滿了五顏六色的氣球。"]
+    }
+  ]
+}
+```
+* **用途**: 目前暫不出題（保留備用）。未來可用於句型重組或克漏字練習。
+
+### 4. `extended_idioms` (延伸成語)
+
+由課文生字延伸出來的成語列表。
+
+```json
+"extended_idioms": [
+  {
+    "idiom": "笑逐顏開(ㄒㄧㄠˋ ㄓㄨˊ ㄧㄢˊ ㄎㄞ)",
+    "explanation": "心中喜悅而眉開眼笑的樣子。",
+    "example_sentence": "每次收到好朋友從國外寄來的信，姐姐總是笑逐顏開，心情愉快。"
+  }
+]
+```
+* **用途**: `Idiom Practice` 成語填空測驗。系統可擷取 `example_sentence` 作為題幹，並將其中的 `idiom` 挖空，以代號選擇題的形式進行測驗。

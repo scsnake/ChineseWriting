@@ -71,9 +71,10 @@ const LessonSelector = {
                                     @change="toggleLesson(lesson.id)"
                                     class="lesson-checkbox"
                                 />
-                                <span class="lesson-label">
-                                    {{ lesson.chapter }} {{ lesson.title }}
-                                </span>
+                                <div class="lesson-label">
+                                    <span class="lesson-chapter">{{ lesson.chapter }}</span>
+                                    <span class="lesson-title">{{ lesson.title }}</span>
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -111,92 +112,65 @@ const LessonSelector = {
         filteredRawData() {
             return this.rawData.filter(item => {
                 const matchPublisher = !this.selectedPublisher || item.publisher === this.selectedPublisher;
-                const matchYear = !this.selectedYear || item.year === this.selectedYear;
+                const matchYear = !this.selectedYear || item.tw_year === this.selectedYear;
                 return matchPublisher && matchYear;
             });
         },
         // Group the filtered data
         groupedData() {
-            const grouped = {};
+            const grouped = [];
 
-            this.filteredRawData.forEach(item => {
-                const key = `${item.grade}_${item.semester}`;
+            this.filteredRawData.forEach(group => {
+                group.books.forEach(book => {
+                    const key = `${group.publisher}_${group.tw_year}_${book.grade}_${book.semester}`;
+                    const gradeNum = book.grade.replace('年級', '');
+                    const semesterAbbr = book.semester.replace('學期', '');
+                    const label = `${gradeNum}${semesterAbbr}`;
 
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        grade: item.grade,
-                        semester: item.semester,
-                        lessons: []
-                    };
-                }
+                    // Initialize expanded state if not set
+                    if (this.expandedGroups[key] === undefined) {
+                        this.expandedGroups[key] = false;
+                    }
 
-                // Add all lessons from this book
-                item.lessons.forEach(lesson => {
-                    grouped[key].lessons.push({
-                        ...lesson,
-                        bookType: item.book_type
+                    const lessons = book.lessons.map(lesson => ({
+                        id: DataService.createLessonId(
+                            group.publisher,
+                            group.tw_year,
+                            book.grade,
+                            book.semester,
+                            lesson.chapter
+                        ),
+                        chapter: lesson.chapter,
+                        title: lesson.title
+                    }));
+
+                    // Sort lessons
+                    lessons.sort((a, b) => {
+                        const matchA = a.chapter.match(/第(.+?)課/);
+                        const matchB = b.chapter.match(/第(.+?)課/);
+                        if (matchA && matchB) {
+                            return this.chineseToNumber(matchA[1]) - this.chineseToNumber(matchB[1]);
+                        }
+                        return 0;
+                    });
+
+                    grouped.push({
+                        id: key,
+                        label: label,
+                        grade: book.grade,
+                        semester: book.semester,
+                        lessons: lessons
                     });
                 });
             });
 
-            // Convert to array and sort groups
-            return Object.entries(grouped).map(([key, data]) => {
-                const gradeNum = data.grade.replace('年級', '');
-                const semesterAbbr = data.semester.replace('學期', '');
-                const label = `${gradeNum}${semesterAbbr}`;
-
-                // Initialize expanded state if not set (default to false/collapsed)
-                if (this.expandedGroups[key] === undefined) {
-                    this.expandedGroups[key] = false;
-                }
-
-                // Map lessons
-                const lessons = data.lessons.map(lesson => ({
-                    id: DataService.createLessonId(
-                        data.grade,
-                        data.semester,
-                        lesson.bookType,
-                        lesson.chapter
-                    ),
-                    chapter: lesson.chapter,
-                    title: lesson.title
-                }));
-
-                // Sort lessons
-                lessons.sort((a, b) => {
-                    const matchA = a.chapter.match(/第(.+?)課/);
-                    const matchB = b.chapter.match(/第(.+?)課/);
-
-                    if (matchA && matchB) {
-                        const numA = this.chineseToNumber(matchA[1]);
-                        const numB = this.chineseToNumber(matchB[1]);
-                        return numA - numB;
-                    }
-                    return 0;
-                });
-
-                return {
-                    id: key,
-                    label: label,
-                    lessons: lessons
-                };
-            }).sort((a, b) => {
-                // Extract grade numbers (e.g., "一年級" -> "一")
-                const gradeA = a.id.split('_')[0].replace('年級', '');
-                const gradeB = b.id.split('_')[0].replace('年級', '');
-
-                const numA = this.chineseToNumber(gradeA);
-                const numB = this.chineseToNumber(gradeB);
-
-                if (numA !== numB) {
-                    return numA - numB;
-                }
-
-                // If grades are same, sort by semester (上 before 下)
-                // "上學期" -> 1, "下學期" -> 2
-                const semA = a.id.includes('上學期') ? 1 : 2;
-                const semB = b.id.includes('上學期') ? 1 : 2;
-
+            // Sort groups
+            return grouped.sort((a, b) => {
+                const numA = this.chineseToNumber(a.grade.replace('年級', ''));
+                const numB = this.chineseToNumber(b.grade.replace('年級', ''));
+                if (numA !== numB) return numA - numB;
+                const semA = a.semester.includes('上') ? 1 : 2;
+                const semB = b.semester.includes('上') ? 1 : 2;
                 return semA - semB;
             });
         }
@@ -204,7 +178,32 @@ const LessonSelector = {
     async mounted() {
         await this.loadData();
     },
+    watch: {
+        selectedPublisher() { this._saveSelectorState(); },
+        selectedYear() { this._saveSelectorState(); },
+    },
     methods: {
+        // Persist expand/filter state
+        _saveSelectorState() {
+            try {
+                sessionStorage.setItem('selectorState', JSON.stringify({
+                    expandedGroups: this.expandedGroups,
+                    selectedPublisher: this.selectedPublisher,
+                    selectedYear: this.selectedYear
+                }));
+            } catch (e) { /* ignore */ }
+        },
+        _restoreSelectorState() {
+            try {
+                const saved = sessionStorage.getItem('selectorState');
+                if (!saved) return;
+                const state = JSON.parse(saved);
+                if (state.expandedGroups) this.expandedGroups = state.expandedGroups;
+                if (state.selectedPublisher) this.selectedPublisher = state.selectedPublisher;
+                if (state.selectedYear) this.selectedYear = state.selectedYear;
+            } catch (e) { /* ignore */ }
+        },
+
         // Convert Chinese numerals to numbers for sorting
         chineseToNumber(chineseNum) {
             const map = {
@@ -225,13 +224,12 @@ const LessonSelector = {
 
             this.rawData.forEach(item => {
                 if (item.publisher) publishers.add(item.publisher);
-                if (item.year) years.add(item.year);
+                if (item.tw_year) years.add(item.tw_year);
             });
 
             this.publishers = Array.from(publishers).sort();
             // Sort years descending (newest first)
             this.years = Array.from(years).sort((a, b) => {
-                // Try numeric sort
                 const numA = parseInt(a);
                 const numB = parseInt(b);
                 if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
@@ -243,12 +241,16 @@ const LessonSelector = {
                 this.selectedPublisher = this.publishers[0];
             }
             if (this.years.length > 0) {
-                this.selectedYear = this.years[0]; // First is newest due to sort
+                this.selectedYear = this.years[0];
             }
+
+            // Restore saved state (overrides defaults)
+            this._restoreSelectorState();
         },
 
         toggleGroup(groupId) {
             this.expandedGroups[groupId] = !this.expandedGroups[groupId];
+            this._saveSelectorState();
         },
 
         toggleLesson(lessonId) {

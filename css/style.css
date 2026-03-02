@@ -5,6 +5,15 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior-y: none;
+    /* Prevent iOS rubber-banding */
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
     font-size: 18px;
@@ -19,9 +28,19 @@ body {
 #app {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
+    /* Use dynamic viewport height for mobile browsers */
     min-height: 0;
     overflow: hidden;
     background: white;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Direct children of #app (router-view renders component directly) fill full height */
+#app>* {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
@@ -418,6 +437,18 @@ body {
 .lesson-label {
     font-size: 16px;
     flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.lesson-chapter {
+    min-width: 90px;
+    display: inline-block;
+    padding-right: 20px;
+}
+
+.lesson-title {
+    font-weight: 600;
 }
 
 /* Test Configuration */
@@ -581,15 +612,55 @@ canvas {
     background: white;
 }
 
-/* Test Actions */
+/* Test Card Component (Unified for Vocab & Similar) */
+.test-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    gap: 15px;
+}
+
+.vocab-card {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.card-actions {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.card-actions .btn {
+    flex: 1;
+    max-width: 200px;
+}
+
+/* Specific button overrides */
+.btn-clear {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-next {
+    background: #667eea;
+    color: white;
+}
+
+/* --- Older Actions (Keep for footer if needed, but we'll use card-actions mostly) --- */
 .test-actions {
     display: flex;
     gap: 15px;
     padding: 20px;
-}
-
-.test-actions .btn {
-    flex: 1;
 }
 
 /* Review Page */
@@ -787,4 +858,250 @@ canvas {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+/* Teal button (形近字測驗) */
+.btn-teal {
+    background: #16a085;
+    color: white;
+}
+
+.btn-teal:active {
+    background: #138d75;
+    transform: scale(0.98);
+}
+
+.btn-teal:disabled {
+    background: #a0cfc8;
+    cursor: not-allowed;
+}
+
+/* Outline button */
+.btn-outline {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline:active {
+    background: #f0f2ff;
+    transform: scale(0.98);
+}
+
+/* =============================================
+   Test Page Shell Layout (new structure)
+   ============================================= */
+
+/* Full-page flex column fixed to viewport — footer always visible */
+.test-page-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Header bar — mirrors .progress-bar from ceb9 */
+.test-header {
+    background: #f0f0f0;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.test-header-title {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.test-mode-label {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+}
+
+.test-progress {
+    font-size: 20px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.test-header-marks {
+    display: flex;
+    gap: 6px;
+    min-width: 60px;
+    justify-content: flex-end;
+}
+
+/* Small icon button (home ⌂) */
+.btn-icon {
+    padding: 6px 10px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Body area — scrollable, flex column */
+.test-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    /* Reduced from 30px */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Footer button row — mirrors .test-actions from ceb9 */
+.test-footer {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px;
+    /* Reduced padding */
+    background: white;
+    border-top: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.test-footer .btn {
+    flex: 1;
+}
+
+/* =============================================
+   Similar Shapes (形近字) Question Styles
+   ============================================= */
+
+/* Context bar showing the full group */
+.similar-group-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #eaf6f6;
+    border: 1px solid #a0d9d0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.similar-group-label {
+    font-size: 15px;
+    color: #555;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.similar-group-char {
+    background: white;
+    border: 1px solid #cce5e0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 20px;
+    color: #2d7d73;
+    letter-spacing: 0.05em;
+}
+
+/* Highlight the character currently being tested */
+.similar-group-char--active {
+    background: #16a085;
+    color: white;
+    border-color: #16a085;
+    font-weight: 700;
+}
+
+/* The blank target in the question word */
+.test-item-similar {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 4px;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* Phonetic hint shown above the blank */
+.similar-hint {
+    font-size: 0.45em;
+    color: #16a085;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    line-height: 1;
+}
+
+/* The blank box character */
+.similar-blank {
+    color: #e74c3c;
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* =============================================
+   Similar Shapes Group Page Layout
+   ============================================= */
+
+/* Flexbox row override — centers any number of cards horizontally */
+.similar-group-page {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    gap: 12px;
+    padding: 12px;
+    width: 100%;
+    margin: 0 auto;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Each slot is a .test-card (Similar mode) */
+.similar-slot {
+    flex: 0 1 auto;
+    /* Allow shrinking */
+    width: auto;
+}
+
+/* Portrait: 2 per row (~45vw each) */
+@media (orientation: portrait) {
+    .similar-slot {
+        flex: 0 0 calc(45vw - 16px);
+    }
+}
+
+/* Landscape: 3 per row (~30vw each) */
+@media (orientation: landscape) {
+    .similar-slot {
+        flex: 0 0 calc(30vw - 16px);
+    }
+}
+
+.similar-slot .question-word {
+    font-size: 32px;
+    /* Smaller font for similar group cards */
+    margin-bottom: 5px;
+}
+
+.similar-slot .test-card {
+    padding: 12px;
+}
+
+.similar-clear-btn {
+    padding: 6px 14px;
+    font-size: 14px;
+    min-height: 36px;
+    min-width: 60px;
 }

@@ -3,10 +3,13 @@ const QuestionableListPage = {
     template: `
         <div class="page-wrapper">
             <div class="header">
-                <button class="btn-back" @click="goBack">
-                    ←
-                </button>
                 <h1>問題題目列表</h1>
+            </div>
+            
+            <div class="nav-buttons">
+                <button @click="goHome" class="btn btn-secondary">
+                    ← 首頁
+                </button>
             </div>
             
             <div class="content">
@@ -77,6 +80,9 @@ const QuestionableListPage = {
         },
 
         goBack() {
+            window.history.back();
+        },
+        goHome() {
             this.$router.push({ name: 'home' });
         }
     }
