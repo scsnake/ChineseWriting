@@ -57,6 +57,14 @@ const HomePage = {
                             </button>
                             
                             <button 
+                                @click="startPolyphonicTest" 
+                                :disabled="selectedLessons.length === 0"
+                                class="btn btn-info btn-full mt-10"
+                            >
+                                🔊 多音字測驗
+                            </button>
+                            
+                            <button 
                                 @click="startStarredTest" 
                                 class="btn btn-warning btn-full mt-10"
                             >
@@ -79,6 +87,13 @@ const HomePage = {
                         </div>
                     </template>
                 </lesson-selector>
+
+                <!-- Toast Notification -->
+                <transition name="toast-fade">
+                    <div v-if="toast.show" class="toast">
+                        {{ toast.message }}
+                    </div>
+                </transition>
             </div>
         </div>
     `,
@@ -89,7 +104,11 @@ const HomePage = {
         return {
             selectedLessons: [],
             testCount: 10,
-            testType: 'mixed'
+            testType: 'mixed',
+            toast: {
+                show: false,
+                message: ''
+            }
         };
     },
     computed: {
@@ -233,8 +252,42 @@ const HomePage = {
             this.$router.push({ name: 'questionable' });
         },
 
-        goToReview() {
+        async goToReview() {
             this.$router.push({ name: 'review' });
+        },
+
+        async startPolyphonicTest() {
+            if (this.selectedLessons.length === 0) {
+                this.showToast('請先選擇課文');
+                return;
+            }
+            try {
+                const questions = await TestEngine.generatePolyphonicTest(this.selectedLessons);
+                if (questions.length === 0) {
+                    this.showToast('所選課文沒有多音字資料');
+                    return;
+                }
+                const session = await StorageService.createSession(
+                    this.selectedLessons,
+                    'polyphonic',
+                    questions.length
+                );
+                this.$router.push({
+                    name: 'polyphonic-test',
+                    params: { sessionId: session.id, questions: JSON.stringify(questions) }
+                });
+            } catch (error) {
+                console.error('Error starting polyphonic test:', error);
+                this.showToast(error.message || '啟動測驗時發生錯誤');
+            }
+        },
+
+        showToast(message) {
+            this.toast.message = message;
+            this.toast.show = true;
+            setTimeout(() => {
+                this.toast.show = false;
+            }, 3000);
         }
     }
 };

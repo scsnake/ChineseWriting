@@ -8,8 +8,11 @@ const ReviewPage = {
             </div>
             
             <div class="nav-buttons">
-                <button @click="goHome" class="btn btn-secondary">
-                    ← 首頁
+                <button @click="goHome" class="btn btn-secondary btn-icon" title="回首頁">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                        <path d="M3 12l9-9 9 9M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                        <path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"></path>
+                    </svg>
                 </button>
                 <button v-if="selectedSessionId" @click="backToList" class="btn btn-secondary">
                     ← 返回列表

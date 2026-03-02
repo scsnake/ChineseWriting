@@ -92,6 +92,46 @@ const TestEngine = {
         return questions;
     },
 
+    // Generate polyphonic (多音字) questions
+    async generatePolyphonicTest(lessonIds) {
+        const groups = await DataService.getMultiplePhoneticsFromLessons(lessonIds);
+        if (groups.length === 0) throw new Error('No polyphonic data in selected lessons');
+
+        const shuffledGroups = this.shuffleArray([...groups]);
+        const questions = [];
+        let id = 0;
+
+        for (let gi = 0; gi < shuffledGroups.length; gi++) {
+            const { item, lessonId, lessonTitle } = shuffledGroups[gi];
+            const groupId = gi;
+            const targetChar = item.character;
+
+            for (const variant of item.variants) {
+                const targetZhuyin = variant.phonetic;
+                const phrases = variant.example_phrases || [];
+                // Select a context phrase that contains the target character
+                const phrase = phrases.find(p => p.includes(targetChar) && p.length >= 2)
+                    || phrases.find(p => p.includes(targetChar))
+                    || phrases[0]
+                    || targetChar;
+
+                questions.push({
+                    id: id++,
+                    type: 'polyphonic_zhuyin', // User writes zhuyin
+                    questionMode: 'polyphonic',
+                    groupId,
+                    targetChar,
+                    targetZhuyin,
+                    contextWord: phrase,
+                    lessonId,
+                    lessonTitle
+                });
+            }
+        }
+
+        return questions;
+    },
+
     // Select best context word for display
     selectContextWord(targetChar, words) {
         if (!words || words.length === 0) {
@@ -135,6 +175,9 @@ const TestEngine = {
             if (i === charIndex) {
                 if (question.type === 'char' || question.type === 'similar_char') {
                     display += `<span class="test-item">${question.targetZhuyin}</span>`;
+                } else if (question.type === 'polyphonic_zhuyin') {
+                    // Show context word, target char is red and underlined (placeholder for user to write zhuyin)
+                    display += `<span class="similar-blank">${targetChar}</span>`;
                 } else {
                     // 'zhuyin' type: show character, user writes phonetic
                     display += `<span class="test-item">${targetChar}</span>`;

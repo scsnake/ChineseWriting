@@ -90,6 +90,27 @@ const DataService = {
         return groups;
     },
 
+    // Get multiple_phonetics from selected lessons
+    async getMultiplePhoneticsFromLessons(lessonIds) {
+        const groups = [];
+
+        for (const lessonId of lessonIds) {
+            const lesson = await this.getLessonById(lessonId);
+            if (!lesson) continue;
+            const pa = lesson.parts && lesson.parts.phonetic_analysis;
+            if (!pa || !pa.multiple_phonetics || pa.multiple_phonetics.length === 0) continue;
+
+            for (const item of pa.multiple_phonetics) {
+                // item: { character: "...", variants: [ { phonetic: "...", example_phrases: [...] }, ... ] }
+                if (item.variants && item.variants.length > 0) {
+                    groups.push({ item, lessonId, lessonTitle: lesson.title });
+                }
+            }
+        }
+
+        return groups;
+    },
+
     // Get lesson title by ID
     async getLessonTitle(lessonId) {
         const lesson = await this.getLessonById(lessonId);

@@ -87,6 +87,7 @@ const routes = [
     { path: '/', name: 'home', component: HomePage },
     { path: '/test', name: 'test', component: TestPage },
     { path: '/review', name: 'review', component: ReviewPage },
+    { path: '/polyphonic-test', name: 'polyphonic-test', component: PolyphonicTestPage },
     { path: '/questionable', name: 'questionable', component: QuestionableListPage }
 ];
 
@@ -150,6 +151,7 @@ app.component('RouterView', RouterView);
 app.component('HomePage', HomePage);
 app.component('TestPage', TestPage);
 app.component('ReviewPage', ReviewPage);
+app.component('PolyphonicTestPage', PolyphonicTestPage);
 app.component('QuestionableListPage', QuestionableListPage);
 app.component('LessonSelector', LessonSelector);
 app.component('HandwritingCanvas', HandwritingCanvas);
