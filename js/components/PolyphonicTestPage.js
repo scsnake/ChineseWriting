@@ -31,11 +31,11 @@ const PolyphonicTestPage = {
                     >
                         <div class="question-word" v-html="getDisplay(q)"></div>
                         <handwriting-canvas
-                            :ref="el => { if (el) variantCanvases[qi] = el }"
+                            :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
                             :canvas-size="canvasSize"
                         ></handwriting-canvas>
                         <div class="card-actions">
-                            <button @click="clearCanvas(qi)" class="btn btn-secondary similar-clear-btn">
+                            <button @click="clearCanvas(q.id)" class="btn btn-secondary similar-clear-btn">
                                 清除
                             </button>
                         </div>
@@ -66,8 +66,9 @@ const PolyphonicTestPage = {
             questions: [],
             currentGroupIndex: 0,
             groupKeys: [],
-            variantCanvases: [],
+            questionCanvases: {}, // Map of questionId -> HandwritingCanvas component
             canvasSize: 200,
+            answersData: {}, // Map of questionId -> strokes array
         };
     },
     computed: {
@@ -103,17 +104,22 @@ const PolyphonicTestPage = {
     },
     watch: {
         currentGroupIndex() {
-            this.$nextTick(() => {
-                this.variantCanvases = [];
-                this.adjustCanvasSize();
-            });
+            // No need to clear questionCanvases manually; Vue ref function handles it
+            this.adjustCanvasSize();
+            this.loadCurrentStrokes();
+            this._saveState();
         }
     },
     methods: {
         initTest() {
-            this.sessionId = this.$route.params.sessionId;
             try {
-                this.questions = JSON.parse(this.$route.params.questions);
+                // Read from sessionStorage (written by HomePage before navigation)
+                const raw = sessionStorage.getItem('polyphonicTestData');
+                if (!raw) throw new Error('無多音字測驗資料');
+                const stored = JSON.parse(raw);
+                this.sessionId = stored.sessionId;
+                this.questions = stored.questions;
+
                 const seen = new Set();
                 this.groupKeys = [];
                 for (const q of this.questions) {
@@ -122,15 +128,24 @@ const PolyphonicTestPage = {
                         this.groupKeys.push(q.groupId);
                     }
                 }
+
+                // Restore previous position if session matches
+                const saved = PersistenceService.restore('polyphonicTestState', this.sessionId);
+                if (saved) {
+                    this.currentGroupIndex = saved.currentGroupIndex || 0;
+                    this.answersData = saved.answersData || {};
+                }
+
+                this.$nextTick(() => this.loadCurrentStrokes());
             } catch (error) {
-                console.error('Error parsing questions:', error);
-                alert('測驗資料錯誤');
+                console.error('Error loading polyphonic test:', error);
+                alert('測驗資料錯誤，請返回首頁重新開始');
                 this.$router.push({ name: 'home' });
             }
         },
         getDisplay(q) { return TestEngine.getQuestionDisplay(q); },
         goHome() { this.$router.push({ name: 'home' }); },
-        clearCanvas(idx) { const c = this.variantCanvases[idx]; if (c) c.clear(); },
+        clearCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
 
         adjustCanvasSize() {
             const W = window.innerWidth;
@@ -165,19 +180,37 @@ const PolyphonicTestPage = {
 
         async saveGroupAnswers() {
             const qs = this.currentGroupQuestions;
-            for (let i = 0; i < qs.length; i++) {
-                const c = this.variantCanvases[i];
-                if (!c || c.isEmpty()) continue;
+            for (const q of qs) {
+                const c = this.questionCanvases[q.id];
+                if (!c) continue;
+
+                // Save strokes for navigation persistence
+                this.answersData[q.id] = c.getStrokes();
+
+                if (c.isEmpty()) continue;
                 try {
                     const blob = await c.getBlob();
                     await StorageService.saveAnswer(
-                        this.sessionId, qs[i].id,
-                        qs[i].type, qs[i].targetChar,
-                        qs[i].targetZhuyin, qs[i].contextWord,
+                        this.sessionId, q.id,
+                        q.type, q.targetChar,
+                        q.targetZhuyin, q.contextWord,
                         blob
                     );
                 } catch (e) { console.error('Error saving answer:', e); }
             }
+            this._saveState();
+        },
+
+        loadCurrentStrokes() {
+            this.$nextTick(() => {
+                const qs = this.currentGroupQuestions;
+                qs.forEach(q => {
+                    const canvas = this.questionCanvases[q.id];
+                    if (canvas) {
+                        canvas.setStrokes(this.answersData[q.id] || []);
+                    }
+                });
+            });
         },
 
         async prevGroup() {
@@ -198,6 +231,14 @@ const PolyphonicTestPage = {
 
         completeTest() {
             this.$router.push({ name: 'review', params: { sessionId: this.sessionId } });
+            PersistenceService.clear('polyphonicTestState');
+        },
+
+        _saveState() {
+            PersistenceService.save('polyphonicTestState', {
+                currentGroupIndex: this.currentGroupIndex,
+                answersData: this.answersData
+            }, this.sessionId);
         }
     }
 };

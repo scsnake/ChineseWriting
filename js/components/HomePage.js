@@ -65,6 +65,14 @@ const HomePage = {
                             </button>
                             
                             <button 
+                                @click="startIdiomTest" 
+                                :disabled="selectedLessons.length === 0"
+                                class="btn btn-purple btn-full mt-10"
+                            >
+                                📖 成語填空
+                            </button>
+                            
+                            <button 
                                 @click="startStarredTest" 
                                 class="btn btn-warning btn-full mt-10"
                             >
@@ -77,12 +85,19 @@ const HomePage = {
                             >
                                 ? 查看標記
                             </button>
-                            
+
                             <button 
                                 @click="goToReview" 
                                 class="btn btn-secondary btn-full mt-10"
                             >
                                 歷史紀錄
+                            </button>
+
+                            <button 
+                                @click="openEditor" 
+                                class="btn btn-editor btn-full mt-10"
+                            >
+                                ✏️ 編輯詞庫
                             </button>
                         </div>
                     </template>
@@ -256,15 +271,38 @@ const HomePage = {
             this.$router.push({ name: 'review' });
         },
 
+        openEditor() {
+            window.open('editor.html', '_blank');
+        },
+
+        async startIdiomTest() {
+            if (this.selectedLessons.length === 0) {
+                alert('請先選擇課文');
+                return;
+            }
+            try {
+                const result = await TestEngine.generateIdiomTest(this.selectedLessons);
+                if (!result || result.questions.length === 0) {
+                    alert('所選課文沒有成語資料');
+                    return;
+                }
+                sessionStorage.setItem('idiomTestData', JSON.stringify(result));
+                this.$router.push({ name: 'idiom-test' });
+            } catch (error) {
+                console.error('Error starting idiom test:', error);
+                alert(error.message || '啟動成語測驗時發生錯誤');
+            }
+        },
+
         async startPolyphonicTest() {
             if (this.selectedLessons.length === 0) {
-                this.showToast('請先選擇課文');
+                alert('請先選擇課文');
                 return;
             }
             try {
                 const questions = await TestEngine.generatePolyphonicTest(this.selectedLessons);
                 if (questions.length === 0) {
-                    this.showToast('所選課文沒有多音字資料');
+                    alert('所選課文沒有多音字資料');
                     return;
                 }
                 const session = await StorageService.createSession(
@@ -272,13 +310,14 @@ const HomePage = {
                     'polyphonic',
                     questions.length
                 );
-                this.$router.push({
-                    name: 'polyphonic-test',
-                    params: { sessionId: session.id, questions: JSON.stringify(questions) }
-                });
+                sessionStorage.setItem('polyphonicTestData', JSON.stringify({
+                    sessionId: session.id,
+                    questions
+                }));
+                this.$router.push({ name: 'polyphonic-test' });
             } catch (error) {
                 console.error('Error starting polyphonic test:', error);
-                this.showToast(error.message || '啟動測驗時發生錯誤');
+                alert(error.message || '啟動測驗時發生錯誤');
             }
         },
 

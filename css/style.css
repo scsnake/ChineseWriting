@@ -972,6 +972,7 @@ canvas {
     height: 24px;
     display: inline-block;
 }
+
 /* Body area — scrollable, flex column */
 .test-body {
     flex: 1;
@@ -1128,6 +1129,7 @@ canvas {
     min-height: 36px;
     min-width: 60px;
 }
+
 /* =============================================
    Polyphonic Test Page
    ============================================= */
@@ -1164,4 +1166,264 @@ canvas {
 .toast-fade-enter-from,
 .toast-fade-leave-to {
     opacity: 0;
+}
+
+/* =============================================
+   Additional Button Variants
+   ============================================= */
+.btn-teal {
+    background: #1abc9c;
+    color: white;
+}
+
+.btn-teal:active {
+    background: #17a589;
+    transform: scale(0.98);
+}
+
+.btn-info {
+    background: #3498db;
+    color: white;
+}
+
+.btn-info:active {
+    background: #2980b9;
+    transform: scale(0.98);
+}
+
+.btn-purple {
+    background: #8e44ad;
+    color: white;
+}
+
+.btn-purple:active {
+    background: #7d3c98;
+    transform: scale(0.98);
+}
+
+.btn-purple:disabled {
+    background: #c39bd3;
+    cursor: not-allowed;
+}
+
+.btn-editor {
+    background: #2c3e50;
+    color: white;
+    font-size: 14px;
+}
+
+.btn-editor:active {
+    background: #1a252f;
+    transform: scale(0.98);
+}
+
+/* =============================================
+   Idiom Test Page (成語填空)
+   ============================================= */
+.idiom-legend-section {
+    background: #f8f9ff;
+    border: 1px solid #dce3f7;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 0 0 24px 0;
+}
+
+.idiom-legend-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #4a3aaa;
+    margin-bottom: 16px;
+}
+
+.idiom-legend-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 in a row when portrait/mobile */
+    gap: 10px;
+}
+
+/* 4 in a row on landscape/desktop */
+@media (min-width: 768px) and (orientation: landscape),
+(min-width: 1024px) {
+    .idiom-legend-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.idiom-legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e5f7;
+}
+
+.idiom-code-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #8e44ad;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.idiom-legend-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.4;
+}
+
+.idiom-full {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.idiom-explanation {
+    font-size: 13px;
+    color: #888;
+}
+
+/* Questions section */
+.idiom-questions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.idiom-questions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.idiom-score {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+}
+
+.score-great {
+    background: #d4edda;
+    color: #155724;
+}
+
+.score-ok {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.score-poor {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.idiom-question-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.idiom-question-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8e44ad;
+    margin-bottom: 8px;
+}
+
+.idiom-sentence {
+    font-size: 20px;
+    line-height: 2;
+    color: #333;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.idiom-blank-slot {
+    display: inline-flex;
+    align-items: center;
+}
+
+.idiom-select {
+    font-size: 16px;
+    padding: 6px 10px;
+    border: 2px solid #8e44ad;
+    border-radius: 8px;
+    background: #faf5ff;
+    color: #333;
+    cursor: pointer;
+    appearance: auto;
+    min-width: 160px;
+}
+
+.idiom-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
+}
+
+/* Answer reveal inline */
+.idiom-result-wrong-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.idiom-result-correct {
+    font-weight: 700;
+    color: #27ae60;
+    background: #eafaf1;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid #a9dfbf;
+}
+
+.idiom-result-wrong {
+    font-weight: 700;
+    color: #e74c3c;
+    background: #fdf2f2;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
+}
+
+.idiom-result-right-answer {
+    font-weight: 700;
+    color: #2ecc71;
+    /* Success green but slightly different from .idiom-result-correct maybe? */
+    background: #eafaf1;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid #d4efdf;
+}
+
+.idiom-question-hint {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #888;
+}
+
+/* Actions */
+.idiom-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 20px 0 40px;
+}
+
+.idiom-actions .btn {
+    min-width: 120px;
 }

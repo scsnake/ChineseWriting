@@ -10,6 +10,11 @@ createApp({
         const jsonText = ref('');
         const charInputs = ref([]);
 
+        // JSON text editor state
+        const showJsonEditor = ref(false);
+        const rawJsonText = ref('');
+        const jsonEditorError = ref('');
+
         // Toast notification state
         const toastShow = ref(false);
         const toastMsg = ref('');
@@ -31,6 +36,16 @@ createApp({
             return currentBook.value.lessons[currentLessonIndex.value];
         });
 
+        // Derived: vocabulary_and_sentences from current lesson's parts
+        const currentVocab = computed(() => {
+            if (!currentLesson.value) return [];
+            const parts = currentLesson.value.parts;
+            if (parts && Array.isArray(parts.vocabulary_and_sentences)) {
+                return parts.vocabulary_and_sentences;
+            }
+            return [];
+        });
+
         // Helper: Show toast notification
         function showToast(msg, color = 'var(--success-color)') {
             toastMsg.value = msg;
@@ -39,6 +54,21 @@ createApp({
             setTimeout(() => {
                 toastShow.value = false;
             }, 3000);
+        }
+
+        // Ensure lesson has proper parts structure
+        function ensureParts(lesson) {
+            if (!lesson.parts) {
+                lesson.parts = {
+                    vocabulary_and_sentences: [],
+                    phonetic_analysis: { similar_shapes: [], multiple_phonetics: [] },
+                    key_sentences: { phrase_practice: [], sentence_practice: [] },
+                    extended_idioms: []
+                };
+            }
+            if (!Array.isArray(lesson.parts.vocabulary_and_sentences)) {
+                lesson.parts.vocabulary_and_sentences = [];
+            }
         }
 
         // 載入 App 預設字庫
@@ -81,7 +111,7 @@ createApp({
                         }
                         showToast('成功載入本地檔案！');
                     } else {
-                        throw new Error('JSON 格式不正確');
+                        throw new Error('JSON 格式不正確，應為陣列');
                     }
                 } catch (err) {
                     alert('讀取失敗: ' + err.message);
@@ -115,11 +145,13 @@ createApp({
             currentSetIndex.value = sIndex;
             currentBookIndex.value = bIndex;
             currentLessonIndex.value = lIndex;
+            showJsonEditor.value = false;
+            jsonEditorError.value = '';
         };
 
         const addNewSet = () => {
             const newSet = {
-                publisher: "自訂",
+                publisher: '自訂',
                 tw_year: (new Date().getFullYear() - 1911).toString(),
                 books: []
             };
@@ -132,8 +164,8 @@ createApp({
             if (sIndex !== null) currentSetIndex.value = sIndex;
             if (currentSetIndex.value === null) return;
             const newBook = {
-                grade: "新年級",
-                semester: "上學期",
+                grade: '新年級',
+                semester: '上學期',
                 lessons: []
             };
             wordsData.value[currentSetIndex.value].books.push(newBook);
@@ -147,9 +179,14 @@ createApp({
 
             if (currentSetIndex.value === null || currentBookIndex.value === null) return;
             const newLesson = {
-                chapter: "第 X 課",
-                title: "新課次",
-                new_characters: []
+                chapter: '第 X 課',
+                title: '新課次',
+                parts: {
+                    vocabulary_and_sentences: [],
+                    phonetic_analysis: { similar_shapes: [], multiple_phonetics: [] },
+                    key_sentences: { phrase_practice: [], sentence_practice: [] },
+                    extended_idioms: []
+                }
             };
             wordsData.value[currentSetIndex.value].books[currentBookIndex.value].lessons.push(newLesson);
             currentLessonIndex.value = wordsData.value[currentSetIndex.value].books[currentBookIndex.value].lessons.length - 1;
@@ -166,10 +203,14 @@ createApp({
 
         const addCharacter = async () => {
             if (!currentLesson.value) return;
-            currentLesson.value.new_characters.push({
-                char: "",
-                zhuyin: "",
-                words: [],
+            ensureParts(currentLesson.value);
+            currentLesson.value.parts.vocabulary_and_sentences.push({
+                '生字國字': '',
+                '生字注音': '',
+                '本課詞語國字': '',
+                '本課詞語注音': '',
+                '詞語解釋': '',
+                '造句': '',
                 isManual: false
             });
 
@@ -183,14 +224,9 @@ createApp({
         };
 
         const deleteCharacter = (cIndex) => {
-            currentLesson.value.new_characters.splice(cIndex, 1);
-        };
-
-        const updateWords = (cIndex, val) => {
-            const wordsArray = val.split(',')
-                .map(w => w.trim())
-                .filter(w => w !== '');
-            currentLesson.value.new_characters[cIndex].words = wordsArray;
+            if (!currentLesson.value) return;
+            ensureParts(currentLesson.value);
+            currentLesson.value.parts.vocabulary_and_sentences.splice(cIndex, 1);
         };
 
         const exportJson = () => {
@@ -205,6 +241,7 @@ createApp({
                     wordsData.value = parsed;
                     showToast('匯入完成！');
                     if (wordsData.value.length > 0) {
+                        currentSetIndex.value = 0;
                         currentBookIndex.value = 0;
                         currentLessonIndex.value = 0;
                     }
@@ -222,27 +259,71 @@ createApp({
             showToast('已複製到剪貼簿');
         };
 
+        // ---- JSON Text Editor (per-lesson) ----
+
+        const openJsonEditor = () => {
+            if (!currentLesson.value) return;
+            rawJsonText.value = JSON.stringify(currentLesson.value, null, 2);
+            jsonEditorError.value = '';
+            showJsonEditor.value = true;
+        };
+
+        const closeJsonEditor = () => {
+            showJsonEditor.value = false;
+            jsonEditorError.value = '';
+        };
+
+        const validateRawJson = () => {
+            try {
+                JSON.parse(rawJsonText.value);
+                jsonEditorError.value = '';
+                return true;
+            } catch (e) {
+                jsonEditorError.value = '⚠️ JSON 格式錯誤：' + e.message;
+                return false;
+            }
+        };
+
+        const onRawJsonInput = () => {
+            // Real-time syntax validation
+            try {
+                JSON.parse(rawJsonText.value);
+                jsonEditorError.value = '';
+            } catch (e) {
+                jsonEditorError.value = '⚠️ ' + e.message;
+            }
+        };
+
+        const saveRawJson = () => {
+            if (!validateRawJson()) return;
+            try {
+                const parsed = JSON.parse(rawJsonText.value);
+                // Replace lesson in place
+                const lessons = wordsData.value[currentSetIndex.value].books[currentBookIndex.value].lessons;
+                lessons[currentLessonIndex.value] = parsed;
+                showToast('已儲存 JSON 變更');
+                showJsonEditor.value = false;
+            } catch (e) {
+                jsonEditorError.value = '⚠️ JSON 格式錯誤：' + e.message;
+            }
+        };
+
         // --- Zhuyin Automation ---
         const autoLookup = ref(true);
-        const activeInputRef = ref(null); // { cIndex, field: 'zhuyin' }
+        const activeInputRef = ref(null);
         let lastQueryTime = 0;
-        const QUERY_COOLDOWN = 500; // ms
+        const QUERY_COOLDOWN = 500;
 
         const onCharInput = async (cIndex) => {
             if (!autoLookup.value) return;
-            const charObj = currentLesson.value.new_characters[cIndex];
-            const char = charObj.char;
+            ensureParts(currentLesson.value);
+            const charObj = currentLesson.value.parts.vocabulary_and_sentences[cIndex];
+            const char = charObj['生字國字'];
             if (!char || char.length !== 1) return;
-
-            // Don't override if manually edited
             if (charObj.isManual) return;
 
-            // Soft rate limit
             const now = Date.now();
-            if (now - lastQueryTime < QUERY_COOLDOWN) {
-                console.log('Query suppressed due to rate limit');
-                return;
-            }
+            if (now - lastQueryTime < QUERY_COOLDOWN) return;
             lastQueryTime = now;
 
             try {
@@ -250,7 +331,7 @@ createApp({
                 if (response.ok) {
                     const data = await response.json();
                     if (data.h && data.h[0] && data.h[0].b) {
-                        charObj.zhuyin = data.h[0].b;
+                        charObj['生字注音'] = data.h[0].b;
                         showToast(`自動填入: ${data.h[0].b}`, 'rgba(74, 144, 226, 0.8)');
                     }
                 }
@@ -260,8 +341,10 @@ createApp({
         };
 
         const markManual = (cIndex) => {
-            if (currentLesson.value && currentLesson.value.new_characters[cIndex]) {
-                currentLesson.value.new_characters[cIndex].isManual = true;
+            if (currentLesson.value) {
+                ensureParts(currentLesson.value);
+                const vocab = currentLesson.value.parts.vocabulary_and_sentences;
+                if (vocab[cIndex]) vocab[cIndex].isManual = true;
             }
         };
 
@@ -288,26 +371,31 @@ createApp({
         const addSymbol = (symbol) => {
             if (!activeInputRef.value) return;
             const { cIndex, field } = activeInputRef.value;
-            const charObj = currentLesson.value.new_characters[cIndex];
-            if (field === 'zhuyin') {
-                charObj.zhuyin += symbol;
+            ensureParts(currentLesson.value);
+            const charObj = currentLesson.value.parts.vocabulary_and_sentences[cIndex];
+            if (field === '生字注音') {
+                charObj['生字注音'] += symbol;
                 charObj.isManual = true;
+            } else if (field === '本課詞語注音') {
+                charObj['本課詞語注音'] += symbol;
             }
         };
 
         const backspace = () => {
             if (!activeInputRef.value) return;
             const { cIndex, field } = activeInputRef.value;
-            const charObj = currentLesson.value.new_characters[cIndex];
-            if (field === 'zhuyin' && charObj.zhuyin.length > 0) {
-                charObj.zhuyin = charObj.zhuyin.slice(0, -1);
+            ensureParts(currentLesson.value);
+            const charObj = currentLesson.value.parts.vocabulary_and_sentences[cIndex];
+            if (field === '生字注音' && charObj['生字注音'].length > 0) {
+                charObj['生字注音'] = charObj['生字注音'].slice(0, -1);
                 charObj.isManual = true;
+            } else if (field === '本課詞語注音' && charObj['本課詞語注音'].length > 0) {
+                charObj['本課詞語注音'] = charObj['本課詞語注音'].slice(0, -1);
             }
         };
 
         onMounted(() => {
-            // 可以選擇預設載入 app 的
-            // loadFromApp();
+            // auto-load removed; user must explicitly click
         });
 
         return {
@@ -318,6 +406,7 @@ createApp({
             currentSet,
             currentBook,
             currentLesson,
+            currentVocab,
             showImportExport,
             jsonText,
             toastShow,
@@ -327,6 +416,9 @@ createApp({
             showKeyboard,
             zhuyinSymbols,
             charInputs,
+            showJsonEditor,
+            rawJsonText,
+            jsonEditorError,
             handleFileUpload,
             loadFromApp,
             downloadJson,
@@ -337,10 +429,13 @@ createApp({
             deleteCurrentLesson,
             addCharacter,
             deleteCharacter,
-            updateWords,
             exportJson,
             importJson,
             copyToClipboard,
+            openJsonEditor,
+            closeJsonEditor,
+            saveRawJson,
+            onRawJsonInput,
             onCharInput,
             markManual,
             setActiveInput,

@@ -41,6 +41,8 @@
             padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         h1 {
@@ -52,6 +54,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         button {
@@ -99,6 +102,15 @@
 
         .btn-outline:hover {
             background: #eee;
+        }
+
+        .btn-warning {
+            background: #f0ad4e;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #ec971f;
         }
 
         .editor-layout {
@@ -267,8 +279,96 @@
 
         .character-grid {
             display: grid;
-            grid-template-columns: 80px 120px 1fr;
-            gap: 15px;
+            grid-template-columns: 80px 140px 1fr 1fr;
+            gap: 12px;
+        }
+
+        .character-grid-extra {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        /* JSON Editor Panel */
+        .json-editor-panel {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .json-editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f0f4f8;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .json-editor-toolbar span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .json-editor-toolbar .toolbar-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        textarea.json-editor-raw {
+            width: 100%;
+            min-height: 400px;
+            font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            padding: 12px;
+            border: none;
+            border-top: 1px solid var(--border-color);
+            box-sizing: border-box;
+            resize: vertical;
+            line-height: 1.5;
+            background: #1e1e2e;
+            color: #cdd6f4;
+            outline: none;
+        }
+
+        textarea.json-editor-raw.has-error {
+            border-top: 2px solid var(--danger-color);
+        }
+
+        .json-error-msg {
+            padding: 8px 15px;
+            background: #fff3f3;
+            color: var(--danger-color);
+            font-size: 0.8rem;
+            font-family: monospace;
+            border-top: 1px solid #fcc;
+        }
+
+        .json-ok-msg {
+            padding: 8px 15px;
+            background: #f3fff6;
+            color: var(--success-color);
+            font-size: 0.8rem;
+            border-top: 1px solid #c3e6cb;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .view-toggle button {
+            padding: 6px 14px;
+            font-size: 0.85rem;
+        }
+
+        .view-toggle button.active {
+            background: var(--primary-color);
+            color: white;
         }
 
         .modal-overlay {
@@ -518,43 +618,92 @@
                         </div>
                     </section>
 
-                    <div class="section-title">
-                        <h3>生字編輯 <span style="font-size: 0.8rem; font-weight: normal; color: #888;">({{
-                                currentLesson.new_characters.length }} 個字)</span></h3>
-                        <button class="btn-success" @click="addCharacter">+ 新增生字</button>
+                    <!-- View Toggle -->
+                    <div class="view-toggle">
+                        <button :class="{ active: !showJsonEditor }" @click="showJsonEditor = false"
+                            class="btn-outline">📋 生字編輯</button>
+                        <button :class="{ active: showJsonEditor }" @click="openJsonEditor" class="btn-outline">{ } JSON
+                            編輯</button>
                     </div>
 
-                    <div v-for="(charObj, cIndex) in currentLesson.new_characters" :key="cIndex" class="character-card">
-                        <div class="character-grid">
-                            <div class="form-group">
-                                <label>國字 <span class="field-hint">1字</span></label>
-                                <input type="text" v-model="charObj.char" maxlength="1" @input="onCharInput(cIndex)"
-                                    ref="charInputs" style="text-align: center; font-size: 1.2rem; font-weight: bold;">
+                    <!-- Visual Editor -->
+                    <div v-if="!showJsonEditor">
+                        <div class="section-title">
+                            <h3>生字編輯 <span style="font-size: 0.8rem; font-weight: normal; color: #888;">({{
+                                    currentVocab.length }} 個字)</span></h3>
+                            <button class="btn-success" @click="addCharacter">+ 新增生字</button>
+                        </div>
+
+                        <div v-for="(charObj, cIndex) in currentVocab" :key="cIndex" class="character-card">
+                            <div class="character-grid">
+                                <div class="form-group">
+                                    <label>國字 <span class="field-hint">1字</span></label>
+                                    <input type="text" v-model="charObj['生字國字']" maxlength="1"
+                                        @input="onCharInput(cIndex)" ref="charInputs"
+                                        style="text-align: center; font-size: 1.2rem; font-weight: bold;">
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        注音 <span class="field-hint">自動填入</span>
+                                        <button class="btn-sm"
+                                            style="padding: 2px 5px; font-size: 0.7rem; margin-left: 5px; background: none; border: 1px solid #ccc;"
+                                            @click="setActiveInput(cIndex, '生字注音')">⌨️</button>
+                                    </label>
+                                    <input type="text" v-model="charObj['生字注音']" placeholder="ㄨㄛˇ"
+                                        @focus="setActiveInput(cIndex, '生字注音')" @input="markManual(cIndex)">
+                                </div>
+                                <div class="form-group">
+                                    <label>本課詞語</label>
+                                    <input type="text" v-model="charObj['本課詞語國字']" placeholder="詞語">
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        詞語注音
+                                        <button class="btn-sm"
+                                            style="padding: 2px 5px; font-size: 0.7rem; margin-left: 5px; background: none; border: 1px solid #ccc;"
+                                            @click="setActiveInput(cIndex, '本課詞語注音')">⌨️</button>
+                                    </label>
+                                    <input type="text" v-model="charObj['本課詞語注音']" placeholder="注音"
+                                        @focus="setActiveInput(cIndex, '本課詞語注音')">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>
-                                    注音 <span class="field-hint">自動填入</span>
-                                    <button class="btn-sm"
-                                        style="padding: 2px 5px; font-size: 0.7rem; margin-left: 5px; background: none; border: 1px solid #ccc;"
-                                        @click="setActiveInput(cIndex, 'zhuyin')">⌨️</button>
-                                </label>
-                                <input type="text" v-model="charObj.zhuyin" placeholder="ㄨㄛˇ"
-                                    @focus="setActiveInput(cIndex, 'zhuyin')" @input="markManual(cIndex)">
+                            <div class="character-grid-extra">
+                                <div class="form-group">
+                                    <label>詞語解釋</label>
+                                    <input type="text" v-model="charObj['詞語解釋']" placeholder="詞語解釋">
+                                </div>
+                                <div class="form-group">
+                                    <label>造句</label>
+                                    <input type="text" v-model="charObj['造句']" placeholder="造句">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>例詞 <span class="field-hint">逗號分隔</span></label>
-                                <input type="text" :value="charObj.words.join(',')"
-                                    @input="updateWords(cIndex, $event.target.value)" placeholder="例詞1, 例詞2">
+                            <div style="text-align: right; margin-top: 10px;">
+                                <button class="btn-outline btn-sm" style="padding: 4px 8px; color: var(--danger-color);"
+                                    @click="deleteCharacter(cIndex)">移除字</button>
                             </div>
                         </div>
-                        <div style="text-align: right; margin-top: 10px;">
-                            <button class="btn-outline btn-sm" style="padding: 4px 8px; color: var(--danger-color);"
-                                @click="deleteCharacter(cIndex)">移除字</button>
+
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn-success" style="padding: 12px 40px;" @click="addCharacter">+
+                                繼續新增生字</button>
                         </div>
                     </div>
 
-                    <div style="text-align: center; margin-top: 30px;">
-                        <button class="btn-success" style="padding: 12px 40px;" @click="addCharacter">+ 繼續新增生字</button>
+                    <!-- JSON Editor Panel -->
+                    <div v-if="showJsonEditor" class="json-editor-panel">
+                        <div class="json-editor-toolbar">
+                            <span>📄 課次 JSON 直接編輯</span>
+                            <div class="toolbar-btns">
+                                <button class="btn-success" style="padding: 6px 14px; font-size: 0.85rem;"
+                                    @click="saveRawJson">✔ 套用變更</button>
+                                <button class="btn-outline" style="padding: 6px 14px; font-size: 0.85rem;"
+                                    @click="closeJsonEditor">取消</button>
+                            </div>
+                        </div>
+                        <textarea class="json-editor-raw" :class="{ 'has-error': jsonEditorError }"
+                            v-model="rawJsonText" @input="onRawJsonInput" spellcheck="false"></textarea>
+                        <div v-if="jsonEditorError" class="json-error-msg">{{ jsonEditorError }}</div>
+                        <div v-else-if="rawJsonText" class="json-ok-msg">✔ JSON 格式正確</div>
                     </div>
                 </div>
                 <div v-else class="empty-state">

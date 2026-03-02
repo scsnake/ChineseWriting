@@ -125,6 +125,29 @@ const DataService = {
             if (title) titles.push(title);
         }
         return titles;
+    },
+
+    // Get extended_idioms from selected lessons
+    async getIdiomsFromLessons(lessonIds) {
+        const idioms = [];
+        for (const lessonId of lessonIds) {
+            const lesson = await this.getLessonById(lessonId);
+            if (!lesson) continue;
+            const parts = lesson.parts;
+            if (!parts || !Array.isArray(parts.extended_idioms)) continue;
+            for (const entry of parts.extended_idioms) {
+                if (entry.idiom && entry.example_sentence) {
+                    idioms.push({
+                        idiom: entry.idiom,
+                        explanation: entry.explanation || '',
+                        example_sentence: entry.example_sentence,
+                        lessonId,
+                        lessonTitle: lesson.title
+                    });
+                }
+            }
+        }
+        return idioms;
     }
 };
 

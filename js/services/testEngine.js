@@ -132,6 +132,53 @@ const TestEngine = {
         return questions;
     },
 
+    // Generate idiom fill-in-the-blank test
+    async generateIdiomTest(lessonIds) {
+        const idioms = await DataService.getIdiomsFromLessons(lessonIds);
+        if (idioms.length === 0) throw new Error('所選課文沒有成語資料');
+
+        const shuffled = this.shuffleArray([...idioms]);
+
+        // Assign letter codes A, B, C, ...
+        const CODES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const codeMap = shuffled.map((item, i) => {
+            // Extract plain idiom text (strip phonetic annotation in parens)
+            const idiomText = item.idiom.replace(/\([^)]*\)\s*$/, '').trim();
+            return {
+                code: CODES[i] || String(i + 1),
+                idiomText,
+                idiomFull: item.idiom,
+                explanation: item.explanation,
+                lessonTitle: item.lessonTitle
+            };
+        });
+
+        // Shuffle questions order independently of code assignment
+        const questionOrder = this.shuffleArray(codeMap.map((_, i) => i));
+
+        const questions = questionOrder.map((codeIdx, qIdx) => {
+            const { code, idiomText, idiomFull, explanation, lessonTitle } = codeMap[codeIdx];
+            const rawSentence = shuffled[codeIdx].example_sentence;
+
+            // Blank out the idiom text in the example sentence
+            const blankedSentence = rawSentence.includes(idiomText)
+                ? rawSentence.replace(idiomText, '＿＿＿＿')
+                : rawSentence + '（______）';
+
+            return {
+                id: qIdx,
+                correctCode: code,
+                blankedSentence,
+                idiomText,
+                idiomFull,
+                explanation,
+                lessonTitle
+            };
+        });
+
+        return { codeMap, questions };
+    },
+
     // Select best context word for display
     selectContextWord(targetChar, words) {
         if (!words || words.length === 0) {

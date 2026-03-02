@@ -51,11 +51,11 @@ const TestPage = {
                 >
                     <div class="question-word" v-html="getDisplay(q)"></div>
                     <handwriting-canvas
-                        :ref="el => { if (el) similarCanvases[qi] = el }"
+                        :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
                         :canvas-size="similarCanvasSize"
                     ></handwriting-canvas>
                     <div class="card-actions">
-                        <button @click="clearSimilarCanvas(qi)" class="btn btn-secondary similar-clear-btn">
+                        <button @click="clearSimilarCanvas(q.id)" class="btn btn-secondary similar-clear-btn">
                             清除
                         </button>
                     </div>
@@ -119,9 +119,10 @@ const TestPage = {
             similarCanvasSize: 200,
             isStarred: false,
             isQuestionable: false,
-            similarCanvases: [],
+            questionCanvases: {}, // Map of questionId -> HandwritingCanvas component
             currentGroupIndex: 0,
             groupKeys: [],
+            answersData: {}, // Map of questionId -> strokes array
         };
     },
     computed: {
@@ -199,9 +200,14 @@ const TestPage = {
     watch: {
         currentIndex() {
             this.checkStarStatus();
+            this._saveState();
+            this.loadCurrentStrokes();
         },
         currentGroupIndex() {
-            this.$nextTick(() => { this.similarCanvases = []; });
+            // No need to clear questionCanvases manually; Vue ref function handles it
+            this.adjustCanvasSize();
+            this.loadCurrentStrokes();
+            this._saveState();
         }
     },
     beforeUnmount() {
@@ -224,6 +230,17 @@ const TestPage = {
                 } else {
                     this.checkStarStatus();
                 }
+
+                // Restore previous state if session matches
+                const saved = PersistenceService.restore('testPageState', this.sessionId);
+                if (saved) {
+                    this.currentIndex = saved.currentIndex || 0;
+                    this.currentGroupIndex = saved.currentGroupIndex || 0;
+                    this.answersData = saved.answersData || {};
+                }
+
+                // Load strokes for initial question
+                this.$nextTick(() => this.loadCurrentStrokes());
             } catch (error) {
                 console.error('Error parsing questions:', error);
                 alert('測驗資料錯誤');
@@ -319,12 +336,17 @@ const TestPage = {
 
         // ── canvas ops ──
         clearCanvas() { this.$refs.canvas && this.$refs.canvas.clear(); },
-        clearSimilarCanvas(idx) { const c = this.similarCanvases[idx]; if (c) c.clear(); },
+        clearSimilarCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
 
         // ── save ──
         async saveCurrentAnswer() {
             const canvas = this.$refs.canvas;
-            if (!canvas || canvas.isEmpty()) return;
+            if (!canvas || !this.currentQuestion) return;
+
+            // Save strokes for navigation persistence
+            this.answersData[this.currentQuestion.id] = canvas.getStrokes();
+
+            if (canvas.isEmpty()) return;
             try {
                 const blob = await canvas.getBlob();
                 await StorageService.saveAnswer(
@@ -334,22 +356,48 @@ const TestPage = {
                     blob
                 );
             } catch (e) { console.error('Error saving answer:', e); }
+            this._saveState();
         },
         async saveSimilarGroupAnswers() {
             const qs = this.currentGroupQuestions;
-            for (let i = 0; i < qs.length; i++) {
-                const c = this.similarCanvases[i];
-                if (!c || c.isEmpty()) continue;
+            for (const q of qs) {
+                const c = this.questionCanvases[q.id];
+                if (!c) continue;
+
+                // Save strokes for navigation persistence
+                this.answersData[q.id] = c.getStrokes();
+
+                if (c.isEmpty()) continue;
                 try {
                     const blob = await c.getBlob();
                     await StorageService.saveAnswer(
-                        this.sessionId, qs[i].id,
-                        qs[i].type, qs[i].targetChar,
-                        qs[i].targetZhuyin, qs[i].contextWord,
+                        this.sessionId, q.id,
+                        q.type, q.targetChar,
+                        q.targetZhuyin, q.contextWord,
                         blob
                     );
                 } catch (e) { console.error('Error saving similar answer:', e); }
             }
+            this._saveState();
+        },
+
+        loadCurrentStrokes() {
+            this.$nextTick(() => {
+                if (this.isSimilarMode) {
+                    const qs = this.currentGroupQuestions;
+                    qs.forEach(q => {
+                        const canvas = this.questionCanvases[q.id];
+                        if (canvas) {
+                            canvas.setStrokes(this.answersData[q.id] || []);
+                        }
+                    });
+                } else {
+                    const canvas = this.$refs.canvas;
+                    if (canvas && this.currentQuestion) {
+                        canvas.setStrokes(this.answersData[this.currentQuestion.id] || []);
+                    }
+                }
+            });
         },
 
         // ── navigation ──
@@ -362,25 +410,34 @@ const TestPage = {
         },
         async prevQuestion() {
             await this.saveCurrentAnswer();
-            if (this.currentIndex > 0) { this.currentIndex--; this.clearCanvas(); }
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+            }
         },
         async nextQuestion() {
             if (this.isSimilarMode) {
                 await this.saveSimilarGroupAnswers();
                 if (this.isLast) { this.completeTest(); return; }
                 this.currentGroupIndex++;
-                this.$nextTick(() => { this.similarCanvases = []; this.adjustCanvasSize(); });
             } else {
                 try {
                     await this.saveCurrentAnswer();
                     if (this.isLast) { this.completeTest(); return; }
                     this.currentIndex++;
-                    this.clearCanvas();
                 } catch (e) { console.error('Error:', e); alert('發生錯誤'); }
             }
         },
         completeTest() {
             this.$router.push({ name: 'review', params: { sessionId: this.sessionId } });
+            PersistenceService.clear('testPageState');
+        },
+
+        _saveState() {
+            PersistenceService.save('testPageState', {
+                currentIndex: this.currentIndex,
+                currentGroupIndex: this.currentGroupIndex,
+                answersData: this.answersData
+            }, this.sessionId);
         }
     }
 };
