@@ -5,7 +5,8 @@ const LessonSelector = {
         <div class="lesson-selector">
             <h2>📚 選擇課文</h2>
             
-            <div class="lesson-selection-container">
+            <div class="lesson-selection-container" style="position: relative;" @mousedown="onContainerMouseDown" @touchstart="onContainerTouchStart">
+                <div v-if="isBoxDragging" class="selection-box" :style="selectionBoxStyle"></div>
                 <!-- Left Panel: Filters (1/3) -->
                 <div class="selection-sidebar">
                     <div class="filter-group">
@@ -44,7 +45,7 @@ const LessonSelector = {
                     </div>
 
                     <div v-for="group in groupedData" :key="group.id" class="grade-group">
-                        <div class="grade-header" @click="toggleGroup(group.id)">
+                        <div class="grade-header" :data-group-id="group.id" @click="toggleGroup(group.id)">
                             <div class="grade-header-left">
                                 <input 
                                     type="checkbox" 
@@ -64,11 +65,12 @@ const LessonSelector = {
                                 v-for="lesson in group.lessons" 
                                 :key="lesson.id"
                                 class="lesson-item"
+                                :data-lesson-id="lesson.id"
                             >
                                 <input 
                                     type="checkbox" 
                                     :checked="selectedLessons.includes(lesson.id)"
-                                    @change="toggleLesson(lesson.id)"
+                                    @change="onLessonCheckboxChange($event, lesson.id)"
                                     class="lesson-checkbox"
                                 />
                                 <div class="lesson-label">
@@ -96,7 +98,16 @@ const LessonSelector = {
             publishers: [],
             years: [],
             selectedPublisher: '',
-            selectedYear: ''
+            selectedYear: '',
+            
+            // Box Drag State
+            isBoxDragging: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            dragAction: 'select',
+            initialSelectionState: []
         };
     },
     computed: {
@@ -107,6 +118,14 @@ const LessonSelector = {
             set(value) {
                 this.$emit('update:modelValue', value);
             }
+        },
+                selectionBoxStyle() {
+            return {
+                left: Math.min(this.startX, this.currentX) + 'px',
+                top: Math.min(this.startY, this.currentY) + 'px',
+                width: Math.abs(this.currentX - this.startX) + 'px',
+                height: Math.abs(this.currentY - this.startY) + 'px'
+            };
         },
         // Filter raw data based on selection
         filteredRawData() {
@@ -252,6 +271,155 @@ const LessonSelector = {
             this.expandedGroups[groupId] = !this.expandedGroups[groupId];
             this._saveSelectorState();
         },
+
+        // --- Box Drag Selection ---
+        onContainerMouseDown(e) {
+            if (e.button !== 0) return; // Only left click
+            if (e.target.closest('button, select, input, .grade-arrow')) return;
+
+            // Determine drag action based on initial click target
+            let dragAction = 'select';
+            const lessonItem = e.target.closest('.lesson-item');
+            if (lessonItem && lessonItem.dataset.lessonId) {
+                if (this.selectedLessons.includes(lessonItem.dataset.lessonId)) dragAction = 'unselect';
+            } else {
+                const groupHeader = e.target.closest('.grade-header');
+                if (groupHeader && groupHeader.dataset.groupId) {
+                    const g = this.groupedData.find(gr => gr.id === groupHeader.dataset.groupId);
+                    if (g && this.isGroupSelected(g)) dragAction = 'unselect';
+                }
+            }
+
+            this.dragAction = dragAction;
+            this.startX = e.clientX;
+            this.startY = e.clientY;
+            this.currentX = e.clientX;
+            this.currentY = e.clientY;
+            this.isBoxDragging = false;
+            this.initialSelectionState = [...this.selectedLessons];
+            
+            window.addEventListener('mousemove', this.onMouseMove);
+            window.addEventListener('mouseup', this.endDrag);
+        },
+        
+        onContainerTouchStart(e) {
+            if (e.target.closest('button, select, input, .grade-arrow')) return;
+            
+            let dragAction = 'select';
+            const lessonItem = e.target.closest('.lesson-item');
+            if (lessonItem && lessonItem.dataset.lessonId) {
+                if (this.selectedLessons.includes(lessonItem.dataset.lessonId)) dragAction = 'unselect';
+            } else {
+                const groupHeader = e.target.closest('.grade-header');
+                if (groupHeader && groupHeader.dataset.groupId) {
+                    const g = this.groupedData.find(gr => gr.id === groupHeader.dataset.groupId);
+                    if (g && this.isGroupSelected(g)) dragAction = 'unselect';
+                }
+            }
+            
+            this.dragAction = dragAction;
+            const touch = e.touches[0];
+            this.startX = touch.clientX;
+            this.startY = touch.clientY;
+            this.currentX = touch.clientX;
+            this.currentY = touch.clientY;
+            this.isBoxDragging = false;
+            this.initialSelectionState = [...this.selectedLessons];
+            
+            window.addEventListener('touchmove', this.onTouchMove, { passive: false });
+            window.addEventListener('touchend', this.endTouchDrag);
+        },
+
+        onMouseMove(e) {
+            this.currentX = e.clientX;
+            this.currentY = e.clientY;
+            const dx = Math.abs(this.currentX - this.startX);
+            const dy = Math.abs(this.currentY - this.startY);
+            if (!this.isBoxDragging && (dx > 5 || dy > 5)) {
+                this.isBoxDragging = true;
+            }
+            if (this.isBoxDragging) {
+                this.updateSelectionFromBox();
+            }
+        },
+
+        onTouchMove(e) {
+            const touch = e.touches[0];
+            this.currentX = touch.clientX;
+            this.currentY = touch.clientY;
+            const dx = Math.abs(this.currentX - this.startX);
+            const dy = Math.abs(this.currentY - this.startY);
+            if (!this.isBoxDragging && (dx > 5 || dy > 5)) {
+                this.isBoxDragging = true;
+            }
+            if (this.isBoxDragging) {
+                if (e.cancelable) e.preventDefault(); // Stop scrolling while boxing
+                this.updateSelectionFromBox();
+            }
+        },
+
+        endDrag() {
+            if (this.isBoxDragging) {
+                this.updateSelectionFromBox();
+                setTimeout(() => { this.isBoxDragging = false; }, 50); // delay to block immediate clicks
+            } else {
+                 this.isBoxDragging = false;
+            }
+            window.removeEventListener('mousemove', this.onMouseMove);
+            window.removeEventListener('mouseup', this.endDrag);
+        },
+
+        endTouchDrag() {
+            this.endDrag();
+            window.removeEventListener('touchmove', this.onTouchMove);
+            window.removeEventListener('touchend', this.endTouchDrag);
+        },
+
+        updateSelectionFromBox() {
+            const boxRect = {
+                left: Math.min(this.startX, this.currentX),
+                top: Math.min(this.startY, this.currentY),
+                right: Math.max(this.startX, this.currentX),
+                bottom: Math.max(this.startY, this.currentY)
+            };
+
+            const newSelection = new Set(this.initialSelectionState);
+            const elements = document.querySelectorAll('.lesson-item, .grade-header');
+
+            elements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                // Check simple bounding box intersection
+                if (boxRect.left < rect.right && boxRect.right > rect.left &&
+                    boxRect.top < rect.bottom && boxRect.bottom > rect.top) {
+                    
+                    if (el.classList.contains('lesson-item') && el.dataset.lessonId) {
+                        const lessonId = el.dataset.lessonId;
+                        if (this.dragAction === 'select') newSelection.add(lessonId);
+                        else newSelection.delete(lessonId);
+                    } else if (el.classList.contains('grade-header') && el.dataset.groupId) {
+                        const groupId = el.dataset.groupId;
+                        const group = this.groupedData.find(g => g.id === groupId);
+                        if (group) {
+                            group.lessons.forEach(l => {
+                                if (this.dragAction === 'select') newSelection.add(l.id);
+                                else newSelection.delete(l.id);
+                            });
+                        }
+                    }
+                }
+            });
+
+            this.selectedLessons = Array.from(newSelection);
+        },
+
+        onLessonCheckboxChange(e, lessonId) {
+            if (this.isBoxDragging) {
+                e.preventDefault();
+                return;
+            }
+            this.toggleLesson(lessonId);
+        },
+
 
         toggleLesson(lessonId) {
             const current = [...this.selectedLessons];
