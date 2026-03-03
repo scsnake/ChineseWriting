@@ -34,7 +34,7 @@ const TestPage = {
                     >
                         <div class="question-header-bar" style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                             <div class="question-word" style="flex:1; text-align:center;" v-html="getDisplay(q)"></div>
-                            <button v-if="qi === 0" @click="toggleStar" class="btn btn-icon star-btn" :title="currentGroupQuestions[0].isStarred ? '取消標記' : '標記此組'">
+                            <button @click="toggleStar" class="btn btn-icon star-btn" :title="currentGroupQuestions[0].isStarred ? '取消標記' : '標記此組'">
                                 {{ currentGroupQuestions[0].isStarred ? '★' : '☆' }}
                             </button>
                         </div>
@@ -172,7 +172,7 @@ const TestPage = {
                 this.$nextTick(() => this.loadCurrentStrokes());
             } catch (error) {
                 console.error('Error parsing questions:', error);
-                alert('測驗資料錯誤');
+                AppToast.show('測驗資料錯誤');
                 this.$router.push({ name: 'home' });
             }
         },

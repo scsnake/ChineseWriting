@@ -153,7 +153,7 @@ const HomePage = {
         },
         async startTest() {
             if (!this.canStartTest) {
-                alert('請選擇課文並輸入題數');
+                AppToast.show('請選擇課文並輸入題數');
                 return;
             }
 
@@ -166,7 +166,7 @@ const HomePage = {
                 );
 
                 if (questions.length === 0) {
-                    alert('所選課文沒有可用的字詞');
+                    AppToast.show('所選課文沒有可用的字詞');
                     return;
                 }
 
@@ -187,19 +187,19 @@ const HomePage = {
                 });
             } catch (error) {
                 console.error('Error starting test:', error);
-                alert('啟動測驗時發生錯誤');
+                AppToast.show('啟動測驗時發生錯誤');
             }
         },
 
         async startSimilarShapesTest() {
             if (this.selectedLessons.length === 0) {
-                alert('請先選擇課文');
+                AppToast.show('請先選擇課文');
                 return;
             }
             try {
                 const questions = await TestEngine.generateSimilarShapesTest(this.selectedLessons);
                 if (questions.length === 0) {
-                    alert('所選課文沒有形近字資料');
+                    AppToast.show('所選課文沒有形近字資料');
                     return;
                 }
                 const session = await StorageService.createSession(
@@ -213,7 +213,7 @@ const HomePage = {
                 });
             } catch (error) {
                 console.error('Error starting similar shapes test:', error);
-                alert(error.message || '啟動測驗時發生錯誤');
+                AppToast.show(error.message || '啟動測驗時發生錯誤');
             }
         },
 
@@ -221,7 +221,7 @@ const HomePage = {
             try {
                 const starredGroups = await StorageService.getStarredItems();
                 if (starredGroups.length === 0) {
-                    alert('尚無標記題目');
+                    AppToast.show('尚無標記題目');
                     return;
                 }
 
@@ -274,7 +274,7 @@ const HomePage = {
                 });
             } catch (error) {
                 console.error('Error starting starred test:', error);
-                alert('發生錯誤');
+                AppToast.show('發生錯誤');
             }
         },
 
@@ -288,13 +288,13 @@ const HomePage = {
 
         async startIdiomTest() {
             if (this.selectedLessons.length === 0) {
-                alert('請先選擇課文');
+                AppToast.show('請先選擇課文');
                 return;
             }
             try {
                 const result = await TestEngine.generateIdiomTest(this.selectedLessons);
                 if (!result || result.questions.length === 0) {
-                    alert('所選課文沒有成語資料');
+                    AppToast.show('所選課文沒有成語資料');
                     return;
                 }
 
@@ -314,19 +314,19 @@ const HomePage = {
                 this.$router.push({ name: 'idiom-test' });
             } catch (error) {
                 console.error('Error starting idiom test:', error);
-                alert(error.message || '啟動成語測驗時發生錯誤');
+                AppToast.show(error.message || '啟動成語測驗時發生錯誤');
             }
         },
 
         async startPolyphonicTest() {
             if (this.selectedLessons.length === 0) {
-                alert('請先選擇課文');
+                AppToast.show('請先選擇課文');
                 return;
             }
             try {
                 const questions = await TestEngine.generatePolyphonicTest(this.selectedLessons);
                 if (questions.length === 0) {
-                    alert('所選課文沒有多音字資料');
+                    AppToast.show('所選課文沒有多音字資料');
                     return;
                 }
                 const session = await StorageService.createSession(
@@ -344,7 +344,7 @@ const HomePage = {
                 });
             } catch (error) {
                 console.error('Error starting polyphonic test:', error);
-                alert(error.message || '啟動測驗時發生錯誤');
+                AppToast.show(error.message || '啟動測驗時發生錯誤');
             }
         },
 

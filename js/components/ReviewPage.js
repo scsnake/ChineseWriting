@@ -157,7 +157,7 @@ const ReviewPage = {
                 }
             } catch (error) {
                 console.error('Error loading sessions:', error);
-                alert('載入紀錄時發生錯誤');
+                AppToast.show('載入紀錄時發生錯誤');
             }
         },
 
@@ -192,7 +192,7 @@ const ReviewPage = {
                 );
             } catch (error) {
                 console.error('Error loading answers:', error);
-                alert('載入答案時發生錯誤');
+                AppToast.show('載入答案時發生錯誤');
             } finally {
                 this.loading = false;
             }
@@ -240,10 +240,10 @@ const ReviewPage = {
             try {
                 await StorageService.deleteSession(sessionId);
                 await this.loadSessions();
-                alert('已刪除');
+                AppToast.show('已刪除');
             } catch (error) {
                 console.error('Error deleting session:', error);
-                alert('刪除時發生錯誤');
+                AppToast.show('刪除時發生錯誤');
             }
         },
 
@@ -257,9 +257,9 @@ const ReviewPage = {
                     await StorageService.deleteSession(session.id);
                 }
                 await this.loadSessions();
-                alert('已全部刪除');
+                AppToast.show('已全部刪除');
             } catch (error) {
-                alert('刪除時發生錯誤');
+                AppToast.show('刪除時發生錯誤');
             }
         },
 
