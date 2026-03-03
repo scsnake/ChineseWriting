@@ -6,6 +6,7 @@ tmp/
 .venv/
 env/
 *.log
+demo.html
 
 # Helper scripts
 *.py

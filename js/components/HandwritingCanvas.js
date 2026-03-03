@@ -60,17 +60,29 @@ const HandwritingCanvas = {
             this.ctx.lineCap = 'round';
             this.ctx.lineJoin = 'round';
 
+            // Add Neon Glow
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowColor = '#667eea';
+
             // Fill with white background
+            // Disable shadow for background fill
+            const oldBlur = this.ctx.shadowBlur;
+            this.ctx.shadowBlur = 0;
             this.ctx.fillStyle = '#ffffff';
             this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+            this.ctx.shadowBlur = oldBlur;
         },
 
         redrawStrokes() {
             if (!this.ctx || !this.$refs.canvas) return;
 
             // Clear canvas before redrawing
+            // Disable shadow for background fill
+            const oldBlur = this.ctx.shadowBlur;
+            this.ctx.shadowBlur = 0;
             this.ctx.fillStyle = '#ffffff';
             this.ctx.fillRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
+            this.ctx.shadowBlur = oldBlur;
 
             if (this.strokes.length === 0) return;
 
@@ -161,11 +173,29 @@ const HandwritingCanvas = {
         },
 
         // Clear canvas
-        clear() {
+        async clear() {
             const canvas = this.$refs.canvas;
+            if (!canvas) return;
+
+            /* [PORTAL_SHRINK_JS_START] */
+            // 1. Add class for CSS animation
+            canvas.classList.add('canvas-portal-shrink');
+
+            // 2. Wait for transition to finish (0.5s)
+            await new Promise(resolve => setTimeout(resolve, 500));
+            /* [PORTAL_SHRINK_JS_END] */
+
+            const oldBlur = this.ctx.shadowBlur;
+            this.ctx.shadowBlur = 0;
             this.ctx.fillStyle = '#ffffff';
             this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+            this.ctx.shadowBlur = oldBlur;
             this.strokes = [];
+
+            /* [PORTAL_SHRINK_RESET_START] */
+            // 3. Remove class to snap back instantly (handled by CSS transition removal if desired)
+            canvas.classList.remove('canvas-portal-shrink');
+            /* [PORTAL_SHRINK_RESET_END] */
         },
 
         // Undo last stroke

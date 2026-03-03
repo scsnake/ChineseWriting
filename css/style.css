@@ -80,6 +80,41 @@ body {
     font-weight: 500;
     transition: all 0.2s;
     touch-action: manipulation;
+    position: relative;
+    overflow: hidden; /* For ripple effect */
+}
+
+/* Ripple effect for buttons */
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.4);
+    opacity: 0;
+    border-radius: 100%;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+.btn-secondary::after {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes ripple {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(40);
+        opacity: 0;
+    }
+}
+
+.btn:active::after {
+    animation: ripple 0.4s ease-out;
 }
 
 .btn-primary {
@@ -542,6 +577,14 @@ body {
     gap: 15px;
 }
 
+/* Bouncy Pop (Spring effect for Stars) */
+@keyframes bouncyPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.4); }
+    70%  { transform: scale(0.85); }
+    100% { transform: scale(1); }
+}
+
 .btn-star {
     background: none;
     border: none;
@@ -555,11 +598,11 @@ body {
 
 .btn-star.active {
     color: #f1c40f;
-    transform: scale(1.1);
+    animation: bouncyPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-star:active {
-    transform: scale(0.95);
+    transform: scale(0.8);
 }
 
 .btn-warning {
@@ -619,7 +662,17 @@ canvas {
     display: block;
     touch-action: none;
     background: white;
+    /* [PORTAL_SHRINK_STYLE_START] */
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    /* [PORTAL_SHRINK_STYLE_END] */
 }
+
+/* [PORTAL_SHRINK_ANIMATION_START] */
+.canvas-portal-shrink {
+    transform: rotate(360deg) scale(0);
+    opacity: 0;
+}
+/* [PORTAL_SHRINK_ANIMATION_END] */
 
 /* Test Card Component (Unified for Vocab & Similar) */
 .test-card {
@@ -939,10 +992,11 @@ canvas {
 .star-btn[title='取消標記'] {
     color: #f1c40f;
     -webkit-text-stroke: 1px #888;
+    animation: bouncyPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .star-btn:active {
-    transform: scale(0.88);
+    transform: scale(0.8);
 }
 
 
