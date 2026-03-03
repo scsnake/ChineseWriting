@@ -6,9 +6,10 @@
 
 - **課文選擇**: 支援多課文選擇，依年級、學期、版本分類
 - **測驗類型**: 
-  - 看注音寫國字
-  - 看國字寫注音
-  - 混合題型
+  - 看注音寫國字 / 看國字寫注音 (生字與詞語練習)
+  - 形近字/多音字測驗 (Polyphonic/Similar Shapes)
+  - 成語練習 (Idiom Practice)
+  - 混合題型與易錯字複習
 - **手寫輸入**: 支援觸控螢幕和 Apple Pencil 手寫
 - **答案保存**: 使用 IndexedDB 本地儲存所有手寫答案
 - **歷史紀錄**: 家長可查看所有測驗紀錄和手寫答案
@@ -23,7 +24,7 @@
 
 ## 檔案結構
 
-```
+```text
 國字注音練習/
 ├── index.html              # 主頁面
 ├── words.json              # 字詞資料
@@ -31,18 +32,27 @@
 │   └── style.css           # 樣式
 ├── js/
 │   ├── app.js              # Vue 應用主程式
+│   ├── editor.js           # 詞庫編輯器邏輯
 │   ├── services/
 │   │   ├── storageService.js   # IndexedDB 服務
 │   │   ├── dataService.js      # 資料載入服務
 │   │   └── testEngine.js       # 測驗生成引擎
 │   └── components/
-│       ├── HandwritingCanvas.js # 手寫畫布元件
-│       ├── LessonSelector.js    # 課文選擇器
-│       ├── HomePage.js          # 首頁
-│       ├── TestPage.js          # 測驗頁面
-│       └── ReviewPage.js        # 歷史紀錄頁面
+│       ├── HandwritingCanvas.js     # 手寫畫布元件
+│       ├── LessonSelector.js        # 課文選擇器
+│       ├── HomePage.js              # 首頁
+│       ├── TestPage.js              # 基本測驗頁面
+│       ├── PolyphonicTestPage.js    # 多音字/形近字測驗
+│       ├── IdiomTestPage.js         # 成語測驗頁面
+│       ├── QuestionableListPage.js  # 易錯字複習
+│       └── ReviewPage.js            # 歷史紀錄頁面
+├── editor.html             # 詞庫編輯器介面
+├── editor_server.py        # 詞庫編輯器後端伺服器
+├── verify_order.py         # 詞庫排序檢查工具
+├── signer.py               # 專案數位簽章工具
 └── plans/
-    └── architecture.md     # 架構設計文件
+    ├── architecture.md     # 架構設計文件
+    └── data_structure.md   # 資料結構說明
 ```
 
 ## 使用方式
@@ -58,8 +68,7 @@
    - 可選擇多個課文
 
 3. **設定測驗**
-   - 輸入題數
-   - 選擇測驗類型（看注音寫國字、看國字寫注音、混合）
+   - 選擇測驗類型（基本生字、多音字/形近字、成語練習等）
    - 點擊「開始測驗」
 
 4. **進行測驗**
@@ -69,27 +78,34 @@
 
 5. **查看紀錄**
    - 首頁點擊「查看歷史紀錄」
-   - 查看所有測驗記錄
-   - 點擊「查看」檢視手寫答案
-   - 可刪除不需要的記錄
+   - 查看所有測驗記錄及其手寫答案
 
 ## 資料格式 (words.json)
+
+新版 `words.json` 的核心結構如下（完整說明請見 `plans/data_structure.md`）：
 
 ```json
 [
   {
-    "grade": "一年級",
-    "semester": "上學期",
-    "book_type": "甲本",
-    "lessons": [
+    "publisher": "康軒",
+    "tw_year": "114",
+    "books": [
       {
-        "chapter": "第一課",
-        "title": "拍拍手",
-        "new_characters": [
+        "grade": "二年級",
+        "semester": "下學期",
+        "lessons": [
           {
-            "char": "右",
-            "zhuyin": "ㄧㄡˋ",
-            "words": ["右手", "左右"]
+            "chapter": "第一課",
+            "title": "春天的顏色",
+            "parts": {
+              "vocabulary_and_sentences": [ ... ],
+              "phonetic_analysis": {
+                "similar_shapes": [ ... ],
+                "multiple_phonetics": [ ... ]
+              },
+              "key_sentences": { ... },
+              "extended_idioms": [ ... ]
+            }
           }
         ]
       }
@@ -118,42 +134,24 @@
 - 防止意外縮放
 - 流暢的繪圖體驗
 
-## 注意事項
+## 詞庫編輯與貢獻
 
-- 首次使用需允許 IndexedDB 權限
-- 手寫答案儲存在瀏覽器本地
-- 清除瀏覽器資料會刪除所有記錄
-- 建議在 iPad 或大螢幕裝置使用
-
-## 詞庫編輯與貢獻 (純網頁版)
-
-本專案提供一個純網頁的編輯器，方便您管理或客製化自己的 `words.json` 詞庫。
+本專案提供一個編輯器與排序檢查工具，方便您管理或客製化自己的 `words.json` 詞庫。
 
 1. **開啟編輯器**
-   - 在首頁點擊「詞庫編輯」或直接開啟 `editor.html`。
-   - 編輯器完全在您的瀏覽器端執行，不會修改伺服器端的檔案。
+   - 執行 `python3 editor_server.py`
+   - 開啟 `http://localhost:8001/editor.html` (預設埠 8001)
 
-2. **編輯與儲存**
-   - **載入資料**: 您可以選擇「載入本地 words.json」、「使用 App 預設字庫」或「從頭建立」。
-   - **編輯內容**: 自由修改年級、課次及生字。
-   - **完成儲存**: 點擊「下載為 words.json」取得修改後的檔案。
-   - **更新 App**: 下載後，請將新檔案**手動蓋過**專案目錄下的 `words.json`，然後重新整理 App 即可看到變更。
-
-3. **Git 貢獻**
-   - 若您是開發者，請在完成上述步驟後，使用 Git 提交 `words.json` 的變更。
+2. **排序檢查**
+   - 確保詞庫排序正確：執行 `python3 verify_order.py`
 
 ## Development
 
 This project was developed with AI assistance:
-- **AI Assistant**: Claude (Anthropic)
-- **Models Used**: Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro
+- **AI Assistant**: Claude (Anthropic) & Gemini (Google)
 - **Development Approach**: Iterative architecture design and implementation
 - **Code Review**: AI-assisted debugging and optimization
-
-The architecture, component design, and implementation were collaboratively developed through human-AI interaction, combining educational requirements with modern web development best practices.
 
 ## License
 
 MIT License - see [`LICENSE`](LICENSE) file for details.
-
-This project uses Vue.js 3, which is also MIT licensed.

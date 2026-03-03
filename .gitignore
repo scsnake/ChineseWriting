@@ -9,3 +9,9 @@ env/
 
 # Helper scripts
 *.py
+
+# Private Key for Digital Signing
+project_key.json
+
+# Cached Payloads
+payloads/
