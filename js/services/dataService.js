@@ -7,8 +7,8 @@ const DataService = {
         if (this.data) return this.data;
 
         try {
-            const response = await fetch('words.json');
-            if (!response.ok) throw new Error('Failed to load words.json');
+            const response = await fetch('words.json?t=' + Date.now());
+            if (!response.ok) throw new Error(`Failed to load words.json: ${response.status} ${response.statusText}`);
             this.data = await response.json();
             return this.data;
         } catch (error) {
