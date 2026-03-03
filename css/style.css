@@ -926,18 +926,24 @@ canvas {
 .star-btn {
     background: none;
     border: none;
-    color: #ccc;
-    font-size: 22px;
+    color: #aaa;
+    /* ☆ empty = muted gray */
+    font-size: 24px;
     line-height: 1;
     flex-shrink: 0;
     transition: color 0.15s, transform 0.15s;
+    -webkit-text-stroke: 0px transparent;
+}
+
+/* ★ starred: golden yellow with gray rim */
+.star-btn[title='取消標記'] {
+    color: #f1c40f;
+    -webkit-text-stroke: 1px #888;
 }
 
 .star-btn:active {
     transform: scale(0.88);
 }
-
-/* ★ active state — driven by Vue reactive isStarred, shown via character */
 
 
 .svg-icon {

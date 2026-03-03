@@ -66,9 +66,13 @@ class SimpleRouter {
                 });
             }
 
-            // Merge in any large params stored in RouterState
+            // Merge in any large params stored in RouterState — query-string params take precedence
             const stored = RouterState.get(route.name);
-            if (stored) Object.assign(params, stored);
+            if (stored) {
+                for (const [k, v] of Object.entries(stored)) {
+                    if (!(k in params)) params[k] = v; // don't overwrite URL params
+                }
+            }
 
             this.currentRoute = {
                 name: route.name,
