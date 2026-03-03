@@ -1,12 +1,4 @@
-// Test Page Component
-// ─────────────────────────────────────────────
-// Template structure (reuse for all future question types):
-//   ┌─ .test-page-shell ────────────────────────┐
-//   │  .test-header   (home btn | title | marks) │
-//   │  .test-body     (mode-specific content)    │
-//   │  .test-footer   (prev | clear | next btn)  │
-//   └───────────────────────────────────────────┘
-// ─────────────────────────────────────────────
+// Test Page Component (Universal Runner for Vocab, Similar Shapes, Polyphonic, Mixed)
 const TestPage = {
     name: 'TestPage',
     template: `
@@ -24,92 +16,62 @@ const TestPage = {
                 <div class="test-header-title">
                     <span class="test-mode-label">{{ modeLabel }}</span>
                     <span class="test-progress">
-                        <span v-if="isSimilarMode">第 {{ currentGroupIndex + 1 }} 組 / 共 {{ totalGroups }} 組</span>
-                        <span v-else>第 {{ currentIndex + 1 }} 題 / 共 {{ questions.length }} 題</span>
+                        第 {{ currentGroupIndex + 1 }} {{ isGroupedUI ? '組' : '題' }} / 共 {{ totalGroups }} {{ isGroupedUI ? '組' : '題' }}
                     </span>
                 </div>
 
-                <!-- Per-question mark buttons (vocab only) -->
-                <div class="test-header-marks" v-if="!isSimilarMode">
-                    <button class="btn-star" @click="toggleStar" :class="{ active: isStarred }">
-                        {{ isStarred ? '★' : '☆' }}
-                    </button>
-                    <button class="btn-star btn-question" @click="toggleQuestionable" :class="{ active: isQuestionable }">
-                        ?
-                    </button>
-                </div>
-                <div v-else class="test-header-marks"></div><!-- spacer -->
+                <div class="test-header-marks"></div><!-- spacer -->
             </div>
 
-            <!-- ── BODY ── swap by questionMode ── -->
+            <!-- ── BODY ── Universal Layout ── -->
+            <div class="test-body" :class="{ 'question-display': currentGroupQuestions.length === 1 }">
+                <div class="similar-group-page" style="width: 100%;">
+                    <div
+                        v-for="(q, qi) in currentGroupQuestions"
+                        :key="q.id"
+                        class="test-card similar-slot"
+                        :class="{'vocab-card-fallback': currentGroupQuestions.length === 1}"
+                    >
+                        <div class="question-header-bar" style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+                            <div class="question-word" style="flex:1; text-align:center;" v-html="getDisplay(q)"></div>
+                            <button v-if="qi === 0" @click="toggleStar" class="btn btn-icon star-btn" :title="currentGroupQuestions[0].isStarred ? '取消標記' : '標記此組'">
+                                {{ currentGroupQuestions[0].isStarred ? '★' : '☆' }}
+                            </button>
+                        </div>
 
-            <div v-if="isSimilarMode" class="test-body similar-group-page">
-                <div
-                    v-for="(q, qi) in currentGroupQuestions"
-                    :key="q.id"
-                    class="test-card similar-slot"
-                >
-                    <div class="question-word" v-html="getDisplay(q)"></div>
-                    <handwriting-canvas
-                        :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
-                        :canvas-size="similarCanvasSize"
-                    ></handwriting-canvas>
-                    <div class="card-actions canvas-tools">
-                        <button @click="undoSimilarCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="復原上一筆">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
-                        </button>
-                        <button @click="clearSimilarCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="清除全部">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
+                        <handwriting-canvas
+                            :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
+                            :canvas-size="currentCanvasSize"
+                            :is-active="true"
+                        ></handwriting-canvas>
+
+                        <div class="card-actions canvas-tools" style="position: relative; width: 100%; min-height: 40px; margin-bottom: 0;">
+                            <!-- Center controls -->
+                            <div style="display: flex; justify-content: center; gap: 8px; width: 100%;">
+                                <button @click="undoCanvas(q.id)" class="btn btn-secondary btn-icon" title="復原上一筆">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+                                </button>
+                                <button @click="clearCanvas(q.id)" class="btn btn-secondary btn-icon" title="清除全部">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 生字 / default single-question view -->
-            <div v-else class="test-body question-display">
-                <div class="test-card vocab-card">
-                    <div class="question-word" v-html="currentQuestionDisplay"></div>
-                    <handwriting-canvas
-                        ref="canvas"
-                        :canvas-size="canvasSize"
-                    ></handwriting-canvas>
-                    
-                    <div class="card-actions canvas-tools">
-                        <button @click="undoCanvas" class="btn btn-secondary btn-icon btn-clear" title="復原上一筆">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
-                        </button>
-                        <button @click="clearCanvas" class="btn btn-secondary btn-icon btn-clear" title="清除全部">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── FOOTER ── simplified, mostly for 'Prev' ── -->
+            <!-- ── FOOTER ── -->
             <div class="test-footer">
-                <!-- Prev -->
                 <button
-                    v-if="isSimilarMode && currentGroupIndex > 0"
+                    v-if="currentGroupIndex > 0"
                     @click="prevGroup"
                     class="btn btn-secondary"
-                >← 上一組</button>
-                <button
-                    v-if="!isSimilarMode && currentIndex > 0"
-                    @click="prevQuestion"
-                    class="btn btn-secondary"
-                >← 上一題</button>
+                >← 上一{{ isGroupedUI ? '組' : '題' }}</button>
                 
-                <!-- Spacer to keep footer height consistent if no prev -->
-                <div v-if="(isSimilarMode && currentGroupIndex === 0) || (!isSimilarMode && currentIndex === 0)" style="flex:1"></div>
+                <div v-else style="flex:1"></div>
 
-                <!-- Next (Vocab) -->
-                <button v-if="!isSimilarMode" @click="nextQuestion" class="btn btn-primary">
-                    {{ isLast ? '✔ 完成' : '下一題 →' }}
-                </button>
-
-                <!-- Next (Similar Mode) -->
-                <button v-if="isSimilarMode" @click="nextQuestion" class="btn btn-primary">
-                    {{ isLast ? '✔ 完成' : '下一組 →' }}
+                <button @click="nextGroup" class="btn btn-primary">
+                    {{ isLast ? '✔ 完成' : '下一' + (isGroupedUI ? '組' : '題') + ' →' }}
                 </button>
             </div>
 
@@ -119,61 +81,38 @@ const TestPage = {
     data() {
         return {
             sessionId: '',
-            questions: [],
-            currentIndex: 0,
-            canvasSize: 300,
-            similarCanvasSize: 200,
-            isStarred: false,
-            isQuestionable: false,
-            questionCanvases: {}, // Map of questionId -> HandwritingCanvas component
+            questions: [],        // Full populated list
             currentGroupIndex: 0,
             groupKeys: [],
+            currentCanvasSize: 300,
+            questionCanvases: {}, // Map of q.id -> HandwritingCanvas component
             answersData: {}, // Map of questionId -> strokes array
         };
     },
     computed: {
-        // ── mode detection ──
-        questionMode() {
-            return this.questions.length > 0 ? (this.questions[0].questionMode || 'vocab') : 'vocab';
-        },
-        isSimilarMode() {
-            return this.questionMode === 'similar_shapes';
-        },
         modeLabel() {
-            const labels = {
-                similar_shapes: '形近字測驗',
-                vocab: '生字測驗',
-            };
-            return labels[this.questionMode] || '測驗';
-        },
+            if (this.questions.length === 0) return '測驗';
+            if (this.questions[0].lessonTitle === '標記題目') return '練習標記';
 
-        // ── standard vocab ──
-        currentQuestion() {
-            return this.questions[this.currentIndex];
+            const type = this.questions[0].questionMode || this.questions[0].type || 'vocab';
+            if (type === 'similar_shapes' || type === 'similar_char') return '形近字測驗';
+            if (type === 'polyphonic' || type === 'polyphonic_zhuyin') return '多音字測驗';
+            return '生字測驗';
         },
-        currentQuestionDisplay() {
-            if (!this.currentQuestion) return '';
-            return TestEngine.getQuestionDisplay(this.currentQuestion);
-        },
-
-        // ── similar shapes ──
         totalGroups() { return this.groupKeys.length; },
         currentGroupId() { return this.groupKeys[this.currentGroupIndex]; },
         currentGroupQuestions() {
-            if (!this.isSimilarMode) return [];
             return this.questions.filter(q => q.groupId === this.currentGroupId);
         },
-
-        // ── shared ──
+        isGroupedUI() {
+            return this.currentGroupQuestions.length > 1;
+        },
         isLast() {
-            return this.isSimilarMode
-                ? this.currentGroupIndex === this.totalGroups - 1
-                : this.currentIndex === this.questions.length - 1;
+            return this.currentGroupIndex === this.totalGroups - 1;
         }
     },
     mounted() {
         this.initTest();
-        // Debounced resize: avoid wiping canvas content during rapid orientation changes
         this._resizeTimer = null;
         this._onResize = () => {
             clearTimeout(this._resizeTimer);
@@ -181,38 +120,16 @@ const TestPage = {
         };
         window.addEventListener('resize', this._onResize);
 
-        // Initial size check
+        // Intial measurements
         this.adjustCanvasSize();
-        // Give DOM a moment to settle for final measurement
         setTimeout(() => { this.adjustCanvasSize(); }, 100);
-
-        // Re-measure after DOM is fully rendered (accurate heights)
-        this.$nextTick(() => {
-            this.adjustCanvasSize();
-            // Debug DOM layout
-            const body = this.$el.querySelector('.test-body');
-            const footer = this.$el.querySelector('.test-footer');
-            console.debug('[DOM layout]', {
-                shellH: this.$el?.offsetHeight,
-                headerH: this.$el.querySelector('.test-header')?.offsetHeight,
-                bodyH: body?.offsetHeight, scrollHeight: body?.scrollHeight,
-                footerH: footer?.offsetHeight,
-                wordH: this.$el.querySelector('.question-word')?.offsetHeight,
-                canvasContainerH: this.$el.querySelector('.canvas-container')?.offsetHeight,
-                canvasSize: this.canvasSize,
-            });
-        });
+        this.$nextTick(() => { this.adjustCanvasSize(); });
     },
     watch: {
-        currentIndex() {
-            this.checkStarStatus();
-            this._saveState();
-            this.loadCurrentStrokes();
-        },
         currentGroupIndex() {
-            // No need to clear questionCanvases manually; Vue ref function handles it
             this.adjustCanvasSize();
             this.loadCurrentStrokes();
+            this.checkStarStatusForCurrentGroup();
             this._saveState();
         }
     },
@@ -225,27 +142,33 @@ const TestPage = {
         initTest() {
             this.sessionId = this.$route.params.sessionId;
             try {
-                this.questions = JSON.parse(this.$route.params.questions);
-                if (this.isSimilarMode) {
-                    const seen = new Set();
-                    this.groupKeys = [];
-                    for (const q of this.questions) {
-                        if (!seen.has(q.groupId)) { seen.add(q.groupId); this.groupKeys.push(q.groupId); }
+                const parsedQuestions = JSON.parse(this.$route.params.questions);
+                const seen = new Set();
+                this.groupKeys = [];
+
+                // Add reactive properties and normalize groups
+                this.questions = parsedQuestions.map((q, idx) => {
+                    const normalizedGroupId = q.groupId !== undefined ? q.groupId : ('vocab-' + q.id);
+                    if (!seen.has(normalizedGroupId)) {
+                        seen.add(normalizedGroupId);
+                        this.groupKeys.push(normalizedGroupId);
                     }
-                    this.currentGroupIndex = 0;
-                } else {
-                    this.checkStarStatus();
-                }
+                    return {
+                        ...q,
+                        groupId: normalizedGroupId,
+                        isStarred: false
+                    };
+                });
 
                 // Restore previous state if session matches
                 const saved = PersistenceService.restore('testPageState', this.sessionId);
                 if (saved) {
-                    this.currentIndex = saved.currentIndex || 0;
                     this.currentGroupIndex = saved.currentGroupIndex || 0;
                     this.answersData = saved.answersData || {};
                 }
 
-                // Load strokes for initial question
+                // Initial updates
+                this.checkStarStatusForCurrentGroup();
                 this.$nextTick(() => this.loadCurrentStrokes());
             } catch (error) {
                 console.error('Error parsing questions:', error);
@@ -257,122 +180,65 @@ const TestPage = {
         getDisplay(q) { return TestEngine.getQuestionDisplay(q); },
         goHome() { this.$router.push({ name: 'home' }); },
 
-        // ── vocab mark helpers ──
-        async checkStarStatus() {
-            if (!this.currentQuestion) return;
-            try {
-                this.isStarred = await StorageService.isStarred(this.currentQuestion);
-                this.isQuestionable = await StorageService.isQuestionable(this.currentQuestion);
-            } catch (e) { console.error(e); }
+        // ── marks ──
+        async checkStarStatusForCurrentGroup() {
+            for (const q of this.currentGroupQuestions) {
+                try {
+                    q.isStarred = await StorageService.isStarred(q);
+                } catch (e) { console.error(e); }
+            }
         },
         async toggleStar() {
-            if (!this.currentQuestion) return;
-            try { this.isStarred = await StorageService.toggleStar(this.currentQuestion); }
-            catch (e) { console.error(e); }
-        },
-        async toggleQuestionable() {
-            if (!this.currentQuestion) return;
-            try { this.isQuestionable = await StorageService.toggleQuestionable(this.currentQuestion); }
-            catch (e) { console.error(e); }
+            try {
+                // Toggle the entire group
+                const newState = await StorageService.toggleStar(this.currentGroupQuestions);
+                // Update UI for all cards in the group
+                this.currentGroupQuestions.forEach(q => q.isStarred = newState);
+            } catch (e) {
+                console.error('Error toggling group star state:', e);
+            }
         },
 
         // ── canvas sizing ──
         adjustCanvasSize() {
             const W = window.innerWidth, H = window.innerHeight;
             const isLandscape = W > H;
-
-            // Measure Shell and Header/Footer for precise overhead
             const shellH = this.$el ? this.$el.offsetHeight : H;
             const headerH = this.$el?.querySelector('.test-header')?.offsetHeight || 60;
             const footerH = this.$el?.querySelector('.test-footer')?.offsetHeight || 80;
-
-            // Available height for the scrollable body area
             const availableBodyH = shellH - headerH - footerH;
 
-            // ── Vocab: Measure live DOM for exact fit ──
-            const vocabCanvas = this.$refs.canvas;
-            const vocabEmpty = !vocabCanvas || vocabCanvas.isEmpty();
+            const itemsCount = this.currentGroupQuestions.length;
+            const cols = isLandscape ? Math.min(itemsCount, 3) : (itemsCount > 1 ? 2 : 1);
+            const rows = Math.ceil(itemsCount / cols);
 
-            if (!this.isSimilarMode) {
-                // For Vocab mode, we want the card to stay within availableBodyH
-                const bodyPadding = 40; // Total vertical padding (20 top + 20 bottom)
-                const cardPadding = 40; // Total vertical padding (20 top + 20 bottom)
-                const gaps = 16;        // Two 8px gaps in .test-card
-                const canvasMargin = 10; // 5px top + 5px bottom on .canvas-container
+            const bodyPadding = 40;
+            const groupPadding = 24;
+            const gapH = (rows - 1) * 12;
+            const cardPadding = 24;
+            // Slightly taller word display if it's a standalone test element
+            const cardWordH = itemsCount === 1 ? 80 : 48;
+            const cardGaps = 16;
+            const canvasMargins = 10;
+            const cardActionsH = 40;
 
-                const wordEl = this.$el?.querySelector('.vocab-card .question-word');
-                const wordH = wordEl ? wordEl.offsetHeight : 80;
-                const actionsEl = this.$el?.querySelector('.vocab-card .card-actions');
-                const actionsH = actionsEl ? actionsEl.offsetHeight : 50;
+            const perRowOverhead = cardPadding + cardWordH + cardGaps + canvasMargins + cardActionsH + 5;
+            const totalOverhead = bodyPadding + groupPadding + gapH + (rows * perRowOverhead);
 
-                const overhead = bodyPadding + cardPadding + gaps + canvasMargin + wordH + actionsH + 10; // +10 safety
-                const fitH = availableBodyH - overhead;
-                const fitW = Math.min(W - 60, 600) - 40; // Max width 600, minus padding
+            const availableCanvasH = (availableBodyH - totalOverhead) / rows;
+            const availableCanvasW = (W - bodyPadding - groupPadding - (cols - 1) * 12) / cols - cardPadding;
 
-                this.canvasSize = Math.min(600, Math.max(120, Math.min(fitW, fitH)));
-
-                console.debug('[vocab sizing]', { availableBodyH, overhead, fitH, fitW, canvasSize: this.canvasSize });
-            } else {
-                // ── Similar Mode ──
-                // Estimate rows: Landscape (1 row), Portrait (usually 2 rows for 2-4 items)
-                const itemsCount = this.currentGroupQuestions.length;
-                const cols = isLandscape ? Math.min(itemsCount, 3) : (itemsCount > 1 ? 2 : 1);
-                const rows = Math.ceil(itemsCount / cols);
-
-                const bodyPadding = 40; // .test-body padding
-                const groupPadding = 24; // .similar-group-page padding
-                const gapH = (rows - 1) * 12; // gap between cards
-                const cardPadding = 24; // .test-card padding
-                const cardWordH = 48;
-                const cardGaps = 16;
-                const canvasMargins = 10;
-                const cardActionsH = 40;
-
-                const perRowOverhead = cardPadding + cardWordH + cardGaps + canvasMargins + cardActionsH + 5;
-                const totalOverhead = bodyPadding + groupPadding + gapH + (rows * perRowOverhead);
-
-                const availableCanvasH = (availableBodyH - totalOverhead) / rows;
-                const availableCanvasW = (W - bodyPadding - groupPadding - (cols - 1) * 12) / cols - cardPadding;
-
-                this.similarCanvasSize = Math.min(380, Math.max(120, Math.min(availableCanvasW, availableCanvasH)));
-
-                console.debug('[similar sizing]', { availableBodyH, rows, totalOverhead, availableCanvasH, similarCanvasSize: this.similarCanvasSize });
-            }
-
-            console.debug('[adjustCanvasSize completion]', {
-                W, H, isLandscape,
-                canvasSize: this.canvasSize,
-                similarCanvasSize: this.similarCanvasSize,
-            });
+            // Allow much larger max canvas size if it is the only card on screen
+            const maxCanvasSize = itemsCount === 1 ? 600 : 380;
+            this.currentCanvasSize = Math.min(maxCanvasSize, Math.max(120, Math.min(availableCanvasW, availableCanvasH)));
         },
 
         // ── canvas ops ──
-        undoCanvas() { this.$refs.canvas && this.$refs.canvas.undo(); },
-        undoSimilarCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.undo(); },
-        clearCanvas() { this.$refs.canvas && this.$refs.canvas.clear(); },
-        clearSimilarCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
+        undoCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.undo(); },
+        clearCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
 
         // ── save ──
-        async saveCurrentAnswer() {
-            const canvas = this.$refs.canvas;
-            if (!canvas || !this.currentQuestion) return;
-
-            // Save strokes for navigation persistence
-            this.answersData[this.currentQuestion.id] = canvas.getStrokes();
-
-            if (canvas.isEmpty()) return;
-            try {
-                const blob = await canvas.getBlob();
-                await StorageService.saveAnswer(
-                    this.sessionId, this.currentIndex,
-                    this.currentQuestion.type, this.currentQuestion.targetChar,
-                    this.currentQuestion.targetZhuyin, this.currentQuestion.contextWord,
-                    blob
-                );
-            } catch (e) { console.error('Error saving answer:', e); }
-            this._saveState();
-        },
-        async saveSimilarGroupAnswers() {
+        async saveGroupAnswers() {
             const qs = this.currentGroupQuestions;
             for (const q of qs) {
                 const c = this.questionCanvases[q.id];
@@ -390,56 +256,34 @@ const TestPage = {
                         q.targetZhuyin, q.contextWord,
                         blob
                     );
-                } catch (e) { console.error('Error saving similar answer:', e); }
+                } catch (e) { console.error('Error saving answer:', e); }
             }
             this._saveState();
         },
 
         loadCurrentStrokes() {
             this.$nextTick(() => {
-                if (this.isSimilarMode) {
-                    const qs = this.currentGroupQuestions;
-                    qs.forEach(q => {
-                        const canvas = this.questionCanvases[q.id];
-                        if (canvas) {
-                            canvas.setStrokes(this.answersData[q.id] || []);
-                        }
-                    });
-                } else {
-                    const canvas = this.$refs.canvas;
-                    if (canvas && this.currentQuestion) {
-                        canvas.setStrokes(this.answersData[this.currentQuestion.id] || []);
+                const qs = this.currentGroupQuestions;
+                qs.forEach(q => {
+                    const canvas = this.questionCanvases[q.id];
+                    if (canvas) {
+                        canvas.setStrokes(this.answersData[q.id] || []);
                     }
-                }
+                });
             });
         },
 
         // ── navigation ──
         async prevGroup() {
-            await this.saveSimilarGroupAnswers();
+            await this.saveGroupAnswers();
             if (this.currentGroupIndex > 0) {
                 this.currentGroupIndex--;
-                this.$nextTick(() => { this.similarCanvases = []; this.adjustCanvasSize(); });
             }
         },
-        async prevQuestion() {
-            await this.saveCurrentAnswer();
-            if (this.currentIndex > 0) {
-                this.currentIndex--;
-            }
-        },
-        async nextQuestion() {
-            if (this.isSimilarMode) {
-                await this.saveSimilarGroupAnswers();
-                if (this.isLast) { this.completeTest(); return; }
-                this.currentGroupIndex++;
-            } else {
-                try {
-                    await this.saveCurrentAnswer();
-                    if (this.isLast) { this.completeTest(); return; }
-                    this.currentIndex++;
-                } catch (e) { console.error('Error:', e); alert('發生錯誤'); }
-            }
+        async nextGroup() {
+            await this.saveGroupAnswers();
+            if (this.isLast) { this.completeTest(); return; }
+            this.currentGroupIndex++;
         },
         completeTest() {
             this.$router.push({ name: 'review', params: { sessionId: this.sessionId } });
@@ -448,7 +292,6 @@ const TestPage = {
 
         _saveState() {
             PersistenceService.save('testPageState', {
-                currentIndex: this.currentIndex,
                 currentGroupIndex: this.currentGroupIndex,
                 answersData: this.answersData
             }, this.sessionId);

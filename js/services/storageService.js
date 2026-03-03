@@ -182,49 +182,59 @@ const StorageService = {
         });
     },
 
-    // Star/Unstar a question item
-    async toggleStar(question) {
+    // Star/Unstar a group of question items (stores entire group atomically)
+    async toggleStar(questions) {
         if (!this.db) await this.init();
+        const qs = Array.isArray(questions) ? questions : [questions];
+        if (qs.length === 0) return false;
 
-        // Create a unique ID for the question data
-        const id = `${question.type}-${question.targetChar}-${question.targetZhuyin}`;
+        // Serialize questions to plain objects (strip Vue reactivity proxies)
+        const plainQs = qs.map(q => ({
+            id: q.id,
+            groupId: q.groupId,
+            type: q.type,
+            questionMode: q.questionMode,
+            targetChar: q.targetChar,
+            targetZhuyin: q.targetZhuyin,
+            contextWord: q.contextWord,
+            lessonTitle: q.lessonTitle
+        }));
+
+        const groupId = plainQs[0].groupId;
 
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['starredItems'], 'readwrite');
             const store = transaction.objectStore('starredItems');
+            const checkRequest = store.get(groupId);
 
-            // Check if exists
-            const getReq = store.get(id);
+            let newState = false;
+            checkRequest.onsuccess = () => {
+                const isCurrentlyStarred = !!checkRequest.result;
+                newState = !isCurrentlyStarred;
 
-            getReq.onsuccess = () => {
-                if (getReq.result) {
-                    // Exists, so remove it
-                    store.delete(id);
-                    resolve(false); // return false for unstarred
+                if (isCurrentlyStarred) {
+                    store.delete(groupId);
                 } else {
-                    // Doesn't exist, add it
-                    const item = {
-                        id: id,
-                        type: question.type,
-                        targetChar: question.targetChar,
-                        targetZhuyin: question.targetZhuyin,
-                        contextWord: question.contextWord,
+                    store.put({
+                        id: groupId,
+                        groupId: groupId,
+                        questionMode: plainQs[0].questionMode || 'vocab',
+                        questions: plainQs,
                         timestamp: Date.now()
-                    };
-                    store.add(item);
-                    resolve(true); // return true for starred
+                    });
                 }
             };
+            checkRequest.onerror = () => reject(checkRequest.error);
 
-            getReq.onerror = () => reject(getReq.error);
+            transaction.oncomplete = () => resolve(newState);
+            transaction.onerror = () => reject(transaction.error);
         });
     },
 
-    // Check if item is starred
+    // Check if group is starred (by groupId)
     async isStarred(question) {
         if (!this.db) await this.init();
-
-        const id = `${question.type}-${question.targetChar}-${question.targetZhuyin}`;
+        const id = question.groupId;
 
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['starredItems'], 'readonly');

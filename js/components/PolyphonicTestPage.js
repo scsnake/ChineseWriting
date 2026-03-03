@@ -41,6 +41,10 @@ const PolyphonicTestPage = {
                             <button @click="clearCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="清除全部">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                             </button>
+                            <div style="flex:1"></div>
+                            <button class="btn-star" @click="toggleStar()" :class="{ active: q.isStarred }" style="font-size:1.2rem; background:none; border:none; color:var(--text-color); cursor:pointer;">
+                                {{ q.isStarred ? '★' : '☆' }}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -110,6 +114,7 @@ const PolyphonicTestPage = {
             // No need to clear questionCanvases manually; Vue ref function handles it
             this.adjustCanvasSize();
             this.loadCurrentStrokes();
+            this.checkStarStatusForCurrentGroup();
             this._saveState();
         }
     },
@@ -125,12 +130,16 @@ const PolyphonicTestPage = {
 
                 const seen = new Set();
                 this.groupKeys = [];
-                for (const q of this.questions) {
+                this.questions = stored.questions.map(q => {
                     if (!seen.has(q.groupId)) {
                         seen.add(q.groupId);
                         this.groupKeys.push(q.groupId);
                     }
-                }
+                    return {
+                        ...q,
+                        isStarred: false
+                    };
+                });
 
                 // Restore previous position if session matches
                 const saved = PersistenceService.restore('polyphonicTestState', this.sessionId);
@@ -139,6 +148,7 @@ const PolyphonicTestPage = {
                     this.answersData = saved.answersData || {};
                 }
 
+                this.checkStarStatusForCurrentGroup();
                 this.$nextTick(() => this.loadCurrentStrokes());
             } catch (error) {
                 console.error('Error loading polyphonic test:', error);
@@ -150,6 +160,25 @@ const PolyphonicTestPage = {
         goHome() { this.$router.push({ name: 'home' }); },
         undoCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.undo(); },
         clearCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
+
+        // ── marks ──
+        async checkStarStatusForCurrentGroup() {
+            for (const q of this.currentGroupQuestions) {
+                try {
+                    q.isStarred = await StorageService.isStarred(q);
+                } catch (e) { console.error(e); }
+            }
+        },
+        async toggleStar() {
+            try {
+                // Toggle the entire group
+                const newState = await StorageService.toggleStar(this.currentGroupQuestions);
+                // Update UI for all cards in the group
+                this.currentGroupQuestions.forEach(q => q.isStarred = newState);
+            } catch (e) {
+                console.error('Error toggling group star state:', e);
+            }
+        },
 
         adjustCanvasSize() {
             const W = window.innerWidth;

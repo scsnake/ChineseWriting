@@ -922,24 +922,6 @@ canvas {
     border-radius: 8px;
 }
 
-/* Star toggle button in question card header */
-.star-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    font-size: 22px;
-    line-height: 1;
-    flex-shrink: 0;
-    transition: color 0.15s, transform 0.15s;
-}
-
-.star-btn:active {
-    transform: scale(0.88);
-}
-
-/* ★ active state — driven by Vue reactive isStarred, shown via character */
-
-
 .svg-icon {
     width: 24px;
     height: 24px;

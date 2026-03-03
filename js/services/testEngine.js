@@ -34,7 +34,9 @@ const TestEngine = {
 
             questions.push({
                 id: i,
+                groupId: `vocab-${charData.char}-${charData.zhuyin}`,
                 type: questionType,
+                questionMode: 'vocab',
                 targetChar: charData.char,
                 targetZhuyin: charData.zhuyin,
                 contextWord: contextWord,
@@ -59,7 +61,8 @@ const TestEngine = {
 
         for (let gi = 0; gi < shuffledGroups.length; gi++) {
             const { group, lessonId, lessonTitle } = shuffledGroups[gi];
-            const groupId = gi; // stable identifier for this group
+            const groupCharsKey = group.map(i => i.character.match(/^(.+?)\(/)?.[1]).join('');
+            const groupId = `similar-${groupCharsKey}`;
 
             for (const item of group) {
                 // item: { character: "池(ㄔˊ)", example_phrases: ["池塘", "水池"] }
@@ -103,8 +106,8 @@ const TestEngine = {
 
         for (let gi = 0; gi < shuffledGroups.length; gi++) {
             const { item, lessonId, lessonTitle } = shuffledGroups[gi];
-            const groupId = gi;
             const targetChar = item.character;
+            const groupId = `poly-${targetChar}`;
 
             for (const variant of item.variants) {
                 const targetZhuyin = variant.phonetic;
@@ -167,6 +170,8 @@ const TestEngine = {
 
             return {
                 id: qIdx,
+                groupId: `idiom-${idiomText}`,
+                questionMode: 'idiom',
                 correctCode: code,
                 blankedSentence,
                 idiomText,

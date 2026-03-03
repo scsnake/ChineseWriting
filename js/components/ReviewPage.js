@@ -90,8 +90,14 @@ const ReviewPage = {
                         
                         <!-- Empty results (all correct for filtered view) -->
                         <div v-if="filteredAnswers.length === 0 && !loading" class="empty-state" style="grid-column: 1/-1;">
-                            <div class="empty-state-icon">✅</div>
-                            <p class="empty-state-text">全部正確！</p>
+                            <template v-if="isIdiomTest">
+                                <div class="empty-state-icon">✅</div>
+                                <p class="empty-state-text">全部正確！</p>
+                            </template>
+                            <template v-else>
+                                <div class="empty-state-icon">📝</div>
+                                <p class="empty-state-text">全部完成 (無作答內容)</p>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -125,6 +131,10 @@ const ReviewPage = {
                 });
             }
             return this.answers;
+        },
+        isIdiomTest() {
+            const session = this.sessions.find(s => s.id === this.selectedSessionId);
+            return session && session.testType === 'idiom';
         }
     },
     async mounted() {

@@ -80,13 +80,6 @@ const HomePage = {
                             </button>
                             
                             <button 
-                                @click="goToQuestionableList" 
-                                class="btn btn-danger btn-full mt-10"
-                            >
-                                ? 查看標記
-                            </button>
-                            
-                            <button 
                                 @click="goToReview" 
                                 class="btn btn-secondary btn-full mt-10"
                             >
@@ -226,21 +219,43 @@ const HomePage = {
 
         async startStarredTest() {
             try {
-                const stars = await StorageService.getStarredItems();
-                if (stars.length === 0) {
+                const starredGroups = await StorageService.getStarredItems();
+                if (starredGroups.length === 0) {
                     alert('尚無標記題目');
                     return;
                 }
 
-                // Convert starred items to questions format
-                const questions = stars.map(item => ({
-                    id: item.id,
-                    type: item.type,
-                    targetChar: item.targetChar,
-                    targetZhuyin: item.targetZhuyin,
-                    contextWord: item.contextWord,
-                    lessonTitle: '標記題目'
-                }));
+                // Shuffle starred groups
+                const shuffled = [...starredGroups].sort(() => Math.random() - 0.5);
+
+                // Unpack each starred group into its questions, preserving groupId
+                const questions = [];
+                let id = 0;
+                for (const group of shuffled) {
+                    // New format: group has a questions array
+                    if (group.questions && Array.isArray(group.questions)) {
+                        for (const q of group.questions) {
+                            questions.push({
+                                ...q,
+                                id: id++,
+                                groupId: group.groupId,
+                                lessonTitle: '標記題目'
+                            });
+                        }
+                    } else {
+                        // Legacy single-item format fallback
+                        questions.push({
+                            id: id++,
+                            groupId: group.groupId || `starred-legacy-${id}`,
+                            type: group.type,
+                            questionMode: group.questionMode || 'vocab',
+                            targetChar: group.targetChar,
+                            targetZhuyin: group.targetZhuyin,
+                            contextWord: group.contextWord,
+                            lessonTitle: '標記題目'
+                        });
+                    }
+                }
 
                 // Create session
                 const session = await StorageService.createSession(
@@ -249,7 +264,7 @@ const HomePage = {
                     questions.length
                 );
 
-                // Navigate
+                // Navigate to unified TestPage
                 this.$router.push({
                     name: 'test',
                     params: {
@@ -261,10 +276,6 @@ const HomePage = {
                 console.error('Error starting starred test:', error);
                 alert('發生錯誤');
             }
-        },
-
-        async goToQuestionableList() {
-            this.$router.push({ name: 'questionable' });
         },
 
         async goToReview() {
@@ -323,11 +334,14 @@ const HomePage = {
                     'polyphonic',
                     questions.length
                 );
-                sessionStorage.setItem('polyphonicTestData', JSON.stringify({
-                    sessionId: session.id,
-                    questions
-                }));
-                this.$router.push({ name: 'polyphonic-test' });
+                // Route through unified TestPage
+                this.$router.push({
+                    name: 'test',
+                    params: {
+                        sessionId: session.id,
+                        questions: JSON.stringify(questions)
+                    }
+                });
             } catch (error) {
                 console.error('Error starting polyphonic test:', error);
                 alert(error.message || '啟動測驗時發生錯誤');
