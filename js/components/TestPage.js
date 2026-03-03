@@ -54,9 +54,12 @@ const TestPage = {
                         :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
                         :canvas-size="similarCanvasSize"
                     ></handwriting-canvas>
-                    <div class="card-actions">
-                        <button @click="clearSimilarCanvas(q.id)" class="btn btn-secondary similar-clear-btn">
-                            清除
+                    <div class="card-actions canvas-tools">
+                        <button @click="undoSimilarCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="復原上一筆">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+                        </button>
+                        <button @click="clearSimilarCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="清除全部">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     </div>
                 </div>
@@ -71,9 +74,12 @@ const TestPage = {
                         :canvas-size="canvasSize"
                     ></handwriting-canvas>
                     
-                    <div class="card-actions">
-                        <button @click="clearCanvas" class="btn btn-secondary btn-clear">
-                            清除
+                    <div class="card-actions canvas-tools">
+                        <button @click="undoCanvas" class="btn btn-secondary btn-icon btn-clear" title="復原上一筆">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+                        </button>
+                        <button @click="clearCanvas" class="btn btn-secondary btn-icon btn-clear" title="清除全部">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     </div>
                 </div>
@@ -289,14 +295,17 @@ const TestPage = {
 
             if (!this.isSimilarMode) {
                 // For Vocab mode, we want the card to stay within availableBodyH
-                const bodyPadding = 40; // Total vertical padding (top+bottom)
-                const cardPadding = 40;
-                const wordEl = this.$el?.querySelector('.vocab-card .question-word');
-                const wordH = wordEl ? wordEl.offsetHeight : 60;
-                const actionsEl = this.$el?.querySelector('.vocab-card .card-actions');
-                const actionsH = actionsEl ? actionsEl.offsetHeight : 60;
+                const bodyPadding = 40; // Total vertical padding (20 top + 20 bottom)
+                const cardPadding = 40; // Total vertical padding (20 top + 20 bottom)
+                const gaps = 16;        // Two 8px gaps in .test-card
+                const canvasMargin = 10; // 5px top + 5px bottom on .canvas-container
 
-                const overhead = bodyPadding + cardPadding + wordH + actionsH + 20; // +20 safety
+                const wordEl = this.$el?.querySelector('.vocab-card .question-word');
+                const wordH = wordEl ? wordEl.offsetHeight : 80;
+                const actionsEl = this.$el?.querySelector('.vocab-card .card-actions');
+                const actionsH = actionsEl ? actionsEl.offsetHeight : 50;
+
+                const overhead = bodyPadding + cardPadding + gaps + canvasMargin + wordH + actionsH + 10; // +10 safety
                 const fitH = availableBodyH - overhead;
                 const fitW = Math.min(W - 60, 600) - 40; // Max width 600, minus padding
 
@@ -310,17 +319,20 @@ const TestPage = {
                 const cols = isLandscape ? Math.min(itemsCount, 3) : (itemsCount > 1 ? 2 : 1);
                 const rows = Math.ceil(itemsCount / cols);
 
-                const bodyPadding = 24; // .similar-group-page padding
-                const gapH = (rows - 1) * 12;
+                const bodyPadding = 40; // .test-body padding
+                const groupPadding = 24; // .similar-group-page padding
+                const gapH = (rows - 1) * 12; // gap between cards
                 const cardPadding = 24; // .test-card padding
-                const cardWordH = 45; // .question-word
-                const cardActionsH = 45; // .card-actions
+                const cardWordH = 48;
+                const cardGaps = 16;
+                const canvasMargins = 10;
+                const cardActionsH = 40;
 
-                const perRowOverhead = cardPadding + cardWordH + cardActionsH + 10;
-                const totalOverhead = bodyPadding + gapH + (rows * perRowOverhead);
+                const perRowOverhead = cardPadding + cardWordH + cardGaps + canvasMargins + cardActionsH + 5;
+                const totalOverhead = bodyPadding + groupPadding + gapH + (rows * perRowOverhead);
 
                 const availableCanvasH = (availableBodyH - totalOverhead) / rows;
-                const availableCanvasW = (W - bodyPadding - (cols - 1) * 12) / cols - cardPadding;
+                const availableCanvasW = (W - bodyPadding - groupPadding - (cols - 1) * 12) / cols - cardPadding;
 
                 this.similarCanvasSize = Math.min(380, Math.max(120, Math.min(availableCanvasW, availableCanvasH)));
 
@@ -335,6 +347,8 @@ const TestPage = {
         },
 
         // ── canvas ops ──
+        undoCanvas() { this.$refs.canvas && this.$refs.canvas.undo(); },
+        undoSimilarCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.undo(); },
         clearCanvas() { this.$refs.canvas && this.$refs.canvas.clear(); },
         clearSimilarCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
 

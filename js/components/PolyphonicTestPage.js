@@ -34,9 +34,12 @@ const PolyphonicTestPage = {
                             :ref="el => { if (el) questionCanvases[q.id] = el; else delete questionCanvases[q.id]; }"
                             :canvas-size="canvasSize"
                         ></handwriting-canvas>
-                        <div class="card-actions">
-                            <button @click="clearCanvas(q.id)" class="btn btn-secondary similar-clear-btn">
-                                清除
+                        <div class="card-actions canvas-tools">
+                            <button @click="undoCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="復原上一筆">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+                            </button>
+                            <button @click="clearCanvas(q.id)" class="btn btn-secondary btn-icon similar-clear-btn" title="清除全部">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                             </button>
                         </div>
                     </div>
@@ -145,6 +148,7 @@ const PolyphonicTestPage = {
         },
         getDisplay(q) { return TestEngine.getQuestionDisplay(q); },
         goHome() { this.$router.push({ name: 'home' }); },
+        undoCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.undo(); },
         clearCanvas(qid) { const c = this.questionCanvases[qid]; if (c) c.clear(); },
 
         adjustCanvasSize() {
@@ -163,17 +167,20 @@ const PolyphonicTestPage = {
             const cols = isLandscape ? Math.min(itemsCount, 3) : (itemsCount > 1 ? 2 : 1);
             const rows = Math.ceil(itemsCount / cols);
 
-            const bodyPadding = 24;
-            const gapH = (rows - 1) * 12;
-            const cardPadding = 24;
-            const cardWordH = 45;
-            const cardActionsH = 45;
+            const bodyPadding = 40; // .test-body padding
+            const groupPadding = 24; // .similar-group-page padding
+            const gapH = (rows - 1) * 12; // gap between cards
+            const cardPadding = 24; // .test-card padding
+            const cardWordH = 48; // .question-word (approximate for 32px font)
+            const cardGaps = 16;  // Two 8px gaps
+            const canvasMargins = 10; // 5px top + 5px bottom
+            const cardActionsH = 40; // .card-actions
 
-            const perRowOverhead = cardPadding + cardWordH + cardActionsH + 10;
-            const totalOverhead = bodyPadding + gapH + (rows * perRowOverhead);
+            const perRowOverhead = cardPadding + cardWordH + cardGaps + canvasMargins + cardActionsH + 5;
+            const totalOverhead = bodyPadding + groupPadding + gapH + (rows * perRowOverhead);
 
             const availableCanvasH = (availableBodyH - totalOverhead) / rows;
-            const availableCanvasW = (W - bodyPadding - (cols - 1) * 12) / cols - cardPadding;
+            const availableCanvasW = (W - bodyPadding - groupPadding - (cols - 1) * 12) / cols - cardPadding;
 
             this.canvasSize = Math.min(380, Math.max(120, Math.min(availableCanvasW, availableCanvasH)));
         },

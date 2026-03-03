@@ -168,6 +168,14 @@ const HandwritingCanvas = {
             this.strokes = [];
         },
 
+        // Undo last stroke
+        undo() {
+            if (this.strokes.length > 0) {
+                this.strokes.pop();
+                this.redrawStrokes();
+            }
+        },
+
         // Export canvas as Blob
         async getBlob() {
             return new Promise((resolve) => {
