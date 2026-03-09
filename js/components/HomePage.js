@@ -113,6 +113,7 @@ const HomePage = {
             selectedLessons: [],
             testCount: 10,
             testType: 'mixed',
+            enableDragSelect: false,
             toast: {
                 show: false,
                 message: ''

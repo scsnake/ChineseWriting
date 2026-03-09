@@ -99,7 +99,7 @@ const LessonSelector = {
             years: [],
             selectedPublisher: '',
             selectedYear: '',
-            
+
             // Box Drag State
             isBoxDragging: false,
             startX: 0,
@@ -107,7 +107,8 @@ const LessonSelector = {
             currentX: 0,
             currentY: 0,
             dragAction: 'select',
-            initialSelectionState: []
+            initialSelectionState: [],
+            isTouchDevice: false
         };
     },
     computed: {
@@ -119,7 +120,7 @@ const LessonSelector = {
                 this.$emit('update:modelValue', value);
             }
         },
-                selectionBoxStyle() {
+        selectionBoxStyle() {
             return {
                 left: Math.min(this.startX, this.currentX) + 'px',
                 top: Math.min(this.startY, this.currentY) + 'px',
@@ -195,6 +196,7 @@ const LessonSelector = {
         }
     },
     async mounted() {
+        this.isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
         await this.loadData();
     },
     watch: {
@@ -277,6 +279,16 @@ const LessonSelector = {
             if (e.button !== 0) return; // Only left click
             if (e.target.closest('button, select, input, .grade-arrow')) return;
 
+            // Feature disabled by request - preserving code below
+            if (true) return;
+
+            // Check global setting and touch device
+            const settings = JSON.parse(localStorage.getItem('zhuyinSettings') || '{}');
+            const dragEnabled = settings.enableDragSelect === true;
+
+            // If dragging is disabled OR it's a touch device, don't start box dragging
+            if (!dragEnabled || this.isTouchDevice) return;
+
             // Determine drag action based on initial click target
             let dragAction = 'select';
             const lessonItem = e.target.closest('.lesson-item');
@@ -297,14 +309,18 @@ const LessonSelector = {
             this.currentY = e.clientY;
             this.isBoxDragging = false;
             this.initialSelectionState = [...this.selectedLessons];
-            
+
             window.addEventListener('mousemove', this.onMouseMove);
             window.addEventListener('mouseup', this.endDrag);
         },
-        
+
         onContainerTouchStart(e) {
             if (e.target.closest('button, select, input, .grade-arrow')) return;
-            
+
+            // Never allow box drag on touch devices to avoid interference with scrolling/swiping
+            return;
+
+            // eslint-disable-next-line no-unreachable
             let dragAction = 'select';
             const lessonItem = e.target.closest('.lesson-item');
             if (lessonItem && lessonItem.dataset.lessonId) {
@@ -316,7 +332,7 @@ const LessonSelector = {
                     if (g && this.isGroupSelected(g)) dragAction = 'unselect';
                 }
             }
-            
+
             this.dragAction = dragAction;
             const touch = e.touches[0];
             this.startX = touch.clientX;
@@ -325,7 +341,7 @@ const LessonSelector = {
             this.currentY = touch.clientY;
             this.isBoxDragging = false;
             this.initialSelectionState = [...this.selectedLessons];
-            
+
             window.addEventListener('touchmove', this.onTouchMove, { passive: false });
             window.addEventListener('touchend', this.endTouchDrag);
         },
@@ -363,7 +379,7 @@ const LessonSelector = {
                 this.updateSelectionFromBox();
                 setTimeout(() => { this.isBoxDragging = false; }, 50); // delay to block immediate clicks
             } else {
-                 this.isBoxDragging = false;
+                this.isBoxDragging = false;
             }
             window.removeEventListener('mousemove', this.onMouseMove);
             window.removeEventListener('mouseup', this.endDrag);
@@ -391,7 +407,7 @@ const LessonSelector = {
                 // Check simple bounding box intersection
                 if (boxRect.left < rect.right && boxRect.right > rect.left &&
                     boxRect.top < rect.bottom && boxRect.bottom > rect.top) {
-                    
+
                     if (el.classList.contains('lesson-item') && el.dataset.lessonId) {
                         const lessonId = el.dataset.lessonId;
                         if (this.dragAction === 'select') newSelection.add(lessonId);

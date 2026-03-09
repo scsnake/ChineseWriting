@@ -73,10 +73,14 @@ const ReviewPage = {
                                     ({{ answer.targetChar }})
                                 </div>
                                 <img 
+                                    v-if="answer.imageUrl"
                                     :src="answer.imageUrl" 
                                     alt="手寫答案"
                                     class="answer-image"
                                 />
+                                <div v-else class="no-answer-placeholder">
+                                    (未作答，已標記)
+                                </div>
                             </div>
 
                             <!-- Idiom Answer -->

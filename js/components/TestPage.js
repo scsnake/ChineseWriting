@@ -247,9 +247,9 @@ const TestPage = {
                 // Save strokes for navigation persistence
                 this.answersData[q.id] = c.getStrokes();
 
-                if (c.isEmpty()) continue;
+                if (c.isEmpty() && !q.isStarred) continue;
                 try {
-                    const blob = await c.getBlob();
+                    const blob = c.isEmpty() ? null : await c.getBlob();
                     await StorageService.saveAnswer(
                         this.sessionId, q.id,
                         q.type, q.targetChar,
