@@ -80,12 +80,12 @@ const StorageService = {
         });
     },
 
-    // Save answer
+    // Save answer (using a deterministic ID to avoid duplicates)
     async saveAnswer(sessionId, questionIndex, questionType, targetChar, targetZhuyin, contextWord, canvasBlob) {
         if (!this.db) await this.init();
 
         const answer = {
-            id: this.generateId(),
+            id: `${sessionId}_${questionIndex}`, // Deterministic ID
             sessionId,
             questionIndex,
             questionType,
@@ -99,7 +99,7 @@ const StorageService = {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['answers'], 'readwrite');
             const store = transaction.objectStore('answers');
-            const request = store.add(answer);
+            const request = store.put(answer); // Use put to overwrite existing
 
             request.onsuccess = () => resolve(answer);
             request.onerror = () => reject(request.error);
