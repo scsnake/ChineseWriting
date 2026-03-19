@@ -263,7 +263,7 @@ const StorageService = {
             };
             request.onerror = () => reject(request.error);
         });
-    },
+    }
 
 };
 
