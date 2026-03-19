@@ -85,7 +85,16 @@ const ReviewPage = {
 
                             <!-- Idiom Answer -->
                             <div v-else class="idiom-answer-card">
-                                <div class="idiom-sentence-review" v-html="formatIdiomSentence(answer)"></div>
+                                <div class="idiom-sentence-review">
+                                    <template v-for="(part, pi) in idiomSentenceParts(answer)" :key="pi">
+                                        <template v-if="part.type === 'text'">{{ part.text }}</template>
+                                        <span v-else-if="part.type === 'correct'" class="idiom-result-correct" v-text="part.text"></span>
+                                        <span v-else-if="part.type === 'wrong'" class="idiom-result-wrong-group">
+                                            <span class="idiom-result-wrong" v-text="part.userChoice"></span>
+                                            <span class="idiom-result-right-answer" v-text="part.correctText"></span>
+                                        </span>
+                                    </template>
+                                </div>
                                 <div class="idiom-review-meta">
                                     正確答案：{{ answer.targetChar }}
                                 </div>
@@ -214,27 +223,24 @@ const ReviewPage = {
             this.answers = [];
         },
 
-        formatIdiomSentence(answer) {
+        idiomSentenceParts(answer) {
             const BLANK = '＿＿＿＿';
             const sentence = answer.contextWord;
             const userChoice = answer.targetZhuyin;
             const correctText = answer.targetChar;
-
             const isCorrect = userChoice.includes(correctText);
-
-            let resultHtml = '';
+            const idx = sentence.indexOf(BLANK);
+            const before = idx >= 0 ? sentence.slice(0, idx) : sentence;
+            const after = idx >= 0 ? sentence.slice(idx + BLANK.length) : '';
+            const parts = [];
+            if (before) parts.push({ type: 'text', text: before });
             if (isCorrect) {
-                resultHtml = `<span class="idiom-result-correct">${userChoice}</span>`;
+                parts.push({ type: 'correct', text: userChoice });
             } else {
-                resultHtml = `
-                    <span class="idiom-result-wrong-group">
-                        <span class="idiom-result-wrong">${userChoice}</span>
-                        <span class="idiom-result-right-answer">${correctText}</span>
-                    </span>
-                `;
+                parts.push({ type: 'wrong', userChoice, correctText });
             }
-
-            return sentence.replace(BLANK, resultHtml);
+            if (after) parts.push({ type: 'text', text: after });
+            return parts;
         },
 
         async deleteSession(sessionId) {

@@ -33,7 +33,11 @@ const TestPage = {
                         :class="{'vocab-card-fallback': currentGroupQuestions.length === 1}"
                     >
                         <div class="question-header-bar" style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-                            <div class="question-word" style="flex:1; text-align:center;" v-html="getDisplay(q)"></div>
+                            <div class="question-word" style="flex:1; text-align:center;">
+                                <template v-for="(part, pi) in getDisplay(q)" :key="pi">
+                                    <span v-if="part.cls" :class="part.cls" v-text="part.text"></span><template v-else>{{ part.text }}</template>
+                                </template>
+                            </div>
                             <button @click="toggleStar" class="btn btn-icon star-btn" :title="currentGroupQuestions[0].isStarred ? '取消標記' : '標記此組'">
                                 {{ currentGroupQuestions[0].isStarred ? '★' : '☆' }}
                             </button>

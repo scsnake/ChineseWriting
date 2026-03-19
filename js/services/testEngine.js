@@ -210,37 +210,33 @@ const TestEngine = {
         return result;
     },
 
-    // Get display text for question
+    // Get display parts for question — returns array of {cls, text} objects for safe rendering
     getQuestionDisplay(question) {
-        // Both similar_shapes and standard 'char' type: show zhuyin, user writes character
         const word = question.contextWord || question.targetChar;
         const targetChar = question.targetChar;
-
-        let display = '';
+        const parts = [];
         let found = false;
+
         for (let i = 0; i < word.length; i++) {
             if (word[i] === targetChar) {
                 found = true;
                 if (question.type === 'char' || question.type === 'similar_char') {
-                    display += `<span class="test-item">${question.targetZhuyin}</span>`;
+                    parts.push({ cls: 'test-item', text: question.targetZhuyin });
                 } else if (question.type === 'polyphonic_zhuyin') {
-                    // Show context word, target char is red and underlined (placeholder for user to write zhuyin)
-                    display += `<span class="similar-blank">${targetChar}</span>`;
+                    parts.push({ cls: 'similar-blank', text: targetChar });
                 } else {
-                    // 'zhuyin' type: show character, user writes phonetic
-                    display += `<span class="test-item">${targetChar}</span>`;
+                    parts.push({ cls: 'test-item', text: targetChar });
                 }
             } else {
-                display += word[i];
+                parts.push({ cls: null, text: word[i] });
             }
         }
 
         if (!found) {
-            // Character not in word — just show phonetic as the whole prompt
-            return `<span class="test-item">${question.targetZhuyin}</span>`;
+            return [{ cls: 'test-item', text: question.targetZhuyin }];
         }
 
-        return display;
+        return parts;
     }
 };
 
