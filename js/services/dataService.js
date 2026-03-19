@@ -9,7 +9,9 @@ const DataService = {
         try {
             const response = await fetch('words.json?t=' + Date.now());
             if (!response.ok) throw new Error(`Failed to load words.json: ${response.status} ${response.statusText}`);
-            this.data = await response.json();
+            const parsed = await response.json();
+            if (!Array.isArray(parsed)) throw new Error('words.json: expected top-level array');
+            this.data = parsed;
             return this.data;
         } catch (error) {
             console.error('Error loading words.json:', error);
@@ -29,10 +31,10 @@ const DataService = {
         const [publisher, twYear, grade, semester, chapter] = lessonId.split('_');
 
         const group = data.find(g => g.publisher === publisher && g.tw_year === twYear);
-        if (!group) return null;
+        if (!group || !Array.isArray(group.books)) return null;
 
         const book = group.books.find(b => b.grade === grade && b.semester === semester);
-        if (!book) return null;
+        if (!book || !Array.isArray(book.lessons)) return null;
 
         return book.lessons.find(l => l.chapter === chapter);
     },
