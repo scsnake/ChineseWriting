@@ -2,45 +2,65 @@
 const LessonSelector = {
     name: 'LessonSelector',
     template: `
-        <div class="lesson-selector">
+        <div class="lesson-selector" :data-mobile-tab="activeTab">
             <h2>📚 選擇課文</h2>
-            
+
+            <!-- Mobile-only tab bar -->
+            <div class="mobile-tab-bar">
+                <button class="mobile-tab-btn" :class="{ active: activeTab === 'lessons' }" @click="activeTab = 'lessons'">
+                    📚 選課文
+                    <span v-if="selectedLessons.length > 0" class="tab-badge">{{ selectedLessons.length }}</span>
+                </button>
+                <button class="mobile-tab-btn" :class="{ active: activeTab === 'config' }" @click="activeTab = 'config'">
+                    📝 測驗設定
+                </button>
+            </div>
+
             <div class="lesson-selection-container" style="position: relative;" @mousedown="onContainerMouseDown" @touchstart="onContainerTouchStart">
                 <div v-if="isBoxDragging" class="selection-box" :style="selectionBoxStyle"></div>
                 <!-- Left Panel: Filters (1/3) -->
                 <div class="selection-sidebar">
-                    <div class="filter-group">
-                        <label class="filter-label">出版社</label>
-                        <select v-model="selectedPublisher" class="filter-select">
-                            <option v-for="pub in publishers" :key="pub" :value="pub">
-                                {{ pub }}
-                            </option>
-                        </select>
+                    <!-- Filters group: shown in Tab 1 on mobile, always visible on desktop -->
+                    <div class="sidebar-filters">
+                        <div class="filter-group">
+                            <label class="filter-label">出版社</label>
+                            <select v-model="selectedPublisher" class="filter-select">
+                                <option v-for="pub in publishers" :key="pub" :value="pub">
+                                    {{ pub }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">學年度</label>
+                            <select v-model="selectedYear" class="filter-select">
+                                <option v-for="year in years" :key="year" :value="year">
+                                    {{ year }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="selection-stats">
+                            <p>已選擇: {{ selectedLessons.length }} 課</p>
+                            <button v-if="selectedLessons.length > 0" @click="clearSelection" class="btn btn-secondary btn-small">
+                                清除選擇
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="filter-group">
-                        <label class="filter-label">學年度</label>
-                        <select v-model="selectedYear" class="filter-select">
-                            <option v-for="year in years" :key="year" :value="year">
-                                {{ year }}
-                            </option>
-                        </select>
+                    <!-- Config group: shown in Tab 2 on mobile, always visible on desktop -->
+                    <div class="sidebar-config">
+                        <slot name="sidebar-extras"></slot>
                     </div>
-
-                    <div class="selection-stats">
-                        <p>已選擇: {{ selectedLessons.length }} 課</p>
-                        <button v-if="selectedLessons.length > 0" @click="clearSelection" class="btn btn-secondary btn-small">
-                            清除選擇
-                        </button>
-                    </div>
-
-                    <!-- Slot for extra sidebar content (e.g., Test Config) -->
-                    <slot name="sidebar-extras"></slot>
                 </div>
 
                 <!-- Right Panel: Lesson List (2/3) -->
                 <div class="selection-content">
-                    <div v-if="groupedData.length === 0" class="empty-state-text">
+                    <div v-if="isLoading" class="loading-hint">
+                        <span class="loading-spinner"></span>
+                        載入課文資料中…
+                    </div>
+                    <div v-else-if="groupedData.length === 0" class="empty-state-text">
                         沒有符合條件的課文
                     </div>
 
@@ -99,6 +119,8 @@ const LessonSelector = {
             years: [],
             selectedPublisher: '',
             selectedYear: '',
+            activeTab: 'lessons',
+            isLoading: true,
 
             // Box Drag State
             isBoxDragging: false,
@@ -237,7 +259,9 @@ const LessonSelector = {
         },
 
         async loadData() {
+            this.isLoading = true;
             this.rawData = await DataService.getStructuredData();
+            this.isLoading = false;
 
             // Extract Metadata
             const publishers = new Set();
@@ -511,7 +535,3 @@ const LessonSelector = {
 
 // Make it globally available
 window.LessonSelector = LessonSelector;
-
-/* SIGNATURE_START
-   [​‌‌‌‌​‌‌‍​​‌​​​‌​‍​‌‌‌​‌​‌‍​‌‌‌​​‌​‍​‌‌​‌‌​​‍​​‌​​​‌​‍​​‌‌‌​‌​‍​​‌​​​​​‍​​‌​​​‌​‍​‌‌​‌​​​‍​‌‌‌​‌​​‍​‌‌‌​‌​​‍​‌‌‌​​​​‍​‌‌‌​​‌‌‍​​‌‌‌​‌​‍​​‌​‌‌‌‌‍​​‌​‌‌‌‌‍​‌‌​​‌‌‌‍​‌‌​‌​​‌‍​‌‌‌​‌​​‍​‌‌​‌​​​‍​‌‌‌​‌​‌‍​‌‌​​​‌​‍​​‌​‌‌‌​‍​‌‌​​​‌‌‍​‌‌​‌‌‌‌‍​‌‌​‌‌​‌‍​​‌​‌‌‌‌‍​‌‌‌​​‌‌‍​‌‌​​​‌‌‍​‌‌‌​​‌‌‍​‌‌​‌‌‌​‍​‌‌​​​​‌‍​‌‌​‌​‌‌‍​‌‌​​‌​‌‍​​‌​‌‌‌‌‍​‌​​​​‌‌‍​‌‌​‌​​​‍​‌‌​‌​​‌‍​‌‌​‌‌‌​‍​‌‌​​‌​‌‍​‌‌‌​​‌‌‍​‌‌​​‌​‌‍​‌​‌​‌‌‌‍​‌‌‌​​‌​‍​‌‌​‌​​‌‍​‌‌‌​‌​​‍​‌‌​‌​​‌‍​‌‌​‌‌‌​‍​‌‌​​‌‌‌‍​​‌​​​‌​‍​​‌​‌‌​​‍​​‌​​​​​‍​​‌​​​‌​‍​‌‌​​​​‌‍​‌‌‌​‌​‌‍​‌‌‌​‌​​‍​‌‌​‌​​​‍​‌‌​‌‌‌‌‍​‌‌‌​​‌​‍​​‌​​​‌​‍​​‌‌‌​‌​‍​​‌​​​​​‍​​‌​​​‌​‍​‌​​​‌​​‍​‌‌​‌​​‌‍​‌‌​​‌‌‌‍​‌‌​‌​​‌‍​‌‌‌​‌​​‍​‌‌​​​​‌‍​‌‌​‌‌​​‍​​‌​​​​​‍​‌​‌​​‌‌‍​‌‌​‌​​‌‍​‌‌​​‌‌‌‍​‌‌​‌‌‌​‍​‌‌​​​​‌‍​‌‌‌​‌​​‍​‌‌‌​‌​‌‍​‌‌‌​​‌​‍​‌‌​​‌​‌‍​​‌​​​‌​‍​​‌​‌‌​​‍​​‌​​​​​‍​​‌​​​‌​‍​‌‌​‌‌‌​‍​‌‌​‌‌‌‌‍​‌‌‌​‌​​‍​‌‌​​‌​‌‍​​‌​​​‌​‍​​‌‌‌​‌​‍​​‌​​​​​‍​​‌​​​‌​‍​‌​‌‌​‌‌‍​‌​‌​​‌‌‍​‌​‌‌​​‌‍​‌​‌​​‌‌‍​‌​‌​‌​​‍​‌​​​‌​‌‍​‌​​‌‌​‌‍​​‌‌‌​‌​‍​​‌​​​​​‍​‌​​‌​​‌‍​‌‌​​‌‌​‍​​‌​​​​​‍​‌‌‌​‌​​‍​‌‌​‌​​​‍​‌‌​‌​​‌‍​‌‌‌​​‌‌‍​​‌​​​​​‍​‌‌​​​‌‌‍​‌‌​‌‌‌‌‍​‌‌​​‌​​‍​‌‌​​‌​‌‍​​‌​​​​​‍​‌‌​‌​​‌‍​‌‌‌​​‌‌‍​​‌​​​​​‍​‌‌​​​​‌‍​‌‌​‌‌‌​‍​‌‌​​​​‌‍​‌‌​‌‌​​‍​‌‌‌‌​​‌‍​‌‌‌‌​‌​‍​‌‌​​‌​‌‍​‌‌​​‌​​‍​​‌​‌‌​​‍​​‌​​​​​‍​‌‌‌​​‌‌‍​‌‌​​‌​‌‍​‌‌​​‌​‌‍​​‌​​​​​‍​‌‌​‌​​​‍​‌‌‌​‌​​‍​‌‌‌​‌​​‍​‌‌‌​​​​‍​‌‌‌​​‌‌‍​​‌‌‌​‌​‍​​‌​‌‌‌‌‍​​‌​‌‌‌‌‍​‌‌​​‌‌‌‍​‌‌​‌​​‌‍​‌‌‌​‌​​‍​‌‌​‌​​​‍​‌‌‌​‌​‌‍​‌‌​​​‌​‍​​‌​‌‌‌​‍​‌‌​​​‌‌‍​‌‌​‌‌‌‌‍​‌‌​‌‌​‌‍​​‌​‌‌‌‌‍​‌‌‌​​‌‌‍​‌‌​​​‌‌‍​‌‌‌​​‌‌‍​‌‌​‌‌‌​‍​‌‌​​​​‌‍​‌‌​‌​‌‌‍​‌‌​​‌​‌‍​​‌​‌‌‌‌‍​‌​​​​‌‌‍​‌‌​‌​​​‍​‌‌​‌​​‌‍​‌‌​‌‌‌​‍​‌‌​​‌​‌‍​‌‌‌​​‌‌‍​‌‌​​‌​‌‍​‌​‌​‌‌‌‍​‌‌‌​​‌​‍​‌‌​‌​​‌‍​‌‌‌​‌​​‍​‌‌​‌​​‌‍​‌‌​‌‌‌​‍​‌‌​​‌‌‌‍​​‌​​​​​‍​‌‌​​‌‌​‍​‌‌​‌‌‌‌‍​‌‌‌​​‌​‍​​‌​​​​​‍​‌‌‌​​​​‍​‌‌‌​​‌​‍​‌‌​‌‌‌‌‍​‌‌​‌​‌​‍​‌‌​​‌​‌‍​‌‌​​​‌‌‍​‌‌‌​‌​​‍​​‌​​​​​‍​‌‌​‌​​‌‍​‌‌​‌‌‌​‍​‌‌​​‌‌​‍​‌‌​‌‌‌‌‍​​‌​‌‌‌​‍​‌​‌‌‌​‌‍​​‌​​​‌​‍​‌‌‌‌‌​‌‍​‌‌‌‌‌​​‍​‌​‌​​‌‌‍​‌​​‌​​‌‍​‌​​​‌‌‌‍​​‌‌‌​‌​‍​‌​​​​‌‌‍​‌​​​​‌​‍​‌‌​​‌​‌‍​‌‌​​‌​‌‍​‌‌‌​‌​​‍​‌​​‌‌​‌‍​‌‌​‌‌​​‍​‌‌‌​​‌‌‍​​‌‌​​‌​‍​‌‌‌‌​​​‍​‌‌​‌‌‌​‍​​‌​‌‌‌‌‍​‌​‌‌​‌​‍​‌​​‌‌‌‌‍​‌‌​‌‌​‌‍​‌‌‌​‌​​‍​‌‌‌‌​​‌‍​‌​​‌‌‌‌‍​‌​‌‌​‌​‍​‌‌​‌​​​‍​‌​​‌​‌‌‍​‌​​​​‌‌‍​‌‌​‌​‌‌‍​‌‌‌​‌​​‍​‌​‌​​​​‍​‌‌​‌‌​​‍​‌​​‌‌‌​‍​​‌‌‌​​‌‍​‌‌‌​‌​​‍​‌​‌​‌‌​‍​‌​‌​‌‌​‍​​‌‌​‌​​‍​‌‌‌​‌‌​‍​​‌‌​​‌‌‍​‌​‌​‌​‌‍​‌​​​​​‌‍​​‌‌‌​​​‍​‌‌‌​​​‌‍​‌​​‌​​‌‍​‌‌‌​‌‌‌‍​‌​‌​‌‌‌‍​​‌‌​​​​‍​‌‌‌‌​‌​‍​‌‌​‌​‌‌‍​‌‌​​​​‌‍​‌‌​‌‌​‌‍​​‌‌​​​‌‍​‌‌‌​‌‌​‍​‌‌‌​​​‌‍​‌​​​​​‌‍​‌​​‌​​‌‍​‌‌​‌​​‌‍​‌​​‌​​​‍​‌​​​​‌​‍​‌​‌‌​‌​‍​‌‌‌‌​​​‍​‌​​​​‌​‍​‌​‌‌​‌​‍​‌​‌​​‌​‍​‌​‌​​‌‌‍​‌​​‌​‌‌‍​​‌‌​‌‌​‍​‌​​‌‌‌​‍​‌​​​‌‌​‍​‌​​‌​‌​‍​‌​‌‌​​‌‍​‌‌‌​​‌​‍​‌​​‌‌​​‍​‌​​‌​​​‍​‌‌‌​​‌​‍​​‌‌​​​‌‍​​‌‌‌​​‌‍​​‌‌​​‌‌‍​‌​​‌​‌​‍​‌​‌​​‌​‍​‌‌‌‌​​‌‍​‌​‌‌​​‌‍​‌‌​‌‌‌​‍​​‌‌​‌​‌‍​‌‌​‌‌‌​‍​‌‌‌​​‌​‍​‌​​​​​‌‍​​‌​‌​‌‌‍​‌​​​​‌​‍​‌​​​‌​​‍​‌‌‌​‌‌‌‍​​‌‌‌‌​‌‍​​‌‌‌‌​‌‍]
-   SIGNATURE_END */
