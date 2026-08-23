@@ -1,12 +1,32 @@
 // Vue App with Router
 const { createApp } = Vue;
 
-// Global state bag for passing large params between pages (avoids URL length limits)
+// Global state bag for passing large params between pages (avoids URL length limits).
+// Backed by sessionStorage so it survives page reloads — iPad Safari reloads
+// background tabs (memory pressure, pull-to-refresh, tab restore); without
+// persistence the target page would find the param missing and bounce home.
 const RouterState = {
     _store: {},
-    set(key, value) { this._store[key] = value; },
-    get(key) { return this._store[key]; },
-    clear(key) { delete this._store[key]; }
+    _key(k) { return '_routerState_' + k; },
+    set(key, value) {
+        this._store[key] = value;
+        try { sessionStorage.setItem(this._key(key), JSON.stringify(value)); }
+        catch (e) { /* quota / private mode — fall back to in-memory only */ }
+    },
+    get(key) {
+        if (key in this._store) return this._store[key];
+        try {
+            const raw = sessionStorage.getItem(this._key(key));
+            if (raw == null) return undefined;
+            const parsed = JSON.parse(raw);
+            this._store[key] = parsed;
+            return parsed;
+        } catch (e) { return undefined; }
+    },
+    clear(key) {
+        delete this._store[key];
+        try { sessionStorage.removeItem(this._key(key)); } catch (e) {}
+    }
 };
 window.RouterState = RouterState;
 
