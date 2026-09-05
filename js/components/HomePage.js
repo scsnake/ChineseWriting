@@ -72,8 +72,16 @@ const HomePage = {
                                 📖 成語填空
                             </button>
                             
-                            <button 
-                                @click="startStarredTest" 
+                            <button
+                                @click="openReading"
+                                :disabled="selectedLessons.length === 0"
+                                class="btn btn-reading btn-full mt-10"
+                            >
+                                📖 閱讀模式
+                            </button>
+
+                            <button
+                                @click="startStarredTest"
                                 class="btn btn-warning btn-full mt-10"
                             >
                                 ★ 練習標記
@@ -111,7 +119,7 @@ const HomePage = {
     data() {
         return {
             selectedLessons: [],
-            testCount: 10,
+            testCount: 20,
             testType: 'char',
             enableDragSelect: false,
             toast: {
@@ -281,6 +289,17 @@ const HomePage = {
 
         async goToReview() {
             this.$router.push({ name: 'review' });
+        },
+
+        openReading() {
+            if (this.selectedLessons.length === 0) {
+                AppToast.show('請先選擇課文');
+                return;
+            }
+            this.$router.push({
+                name: 'reading',
+                params: { lessonIds: this.selectedLessons }
+            });
         },
 
         openEditor() {

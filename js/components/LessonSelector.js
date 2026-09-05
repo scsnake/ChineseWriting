@@ -32,12 +32,31 @@ const LessonSelector = {
                         </div>
 
                         <div class="filter-group">
-                            <label class="filter-label">學年度</label>
-                            <select v-model="selectedYear" class="filter-select">
-                                <option v-for="year in years" :key="year" :value="year">
-                                    {{ year }}
-                                </option>
-                            </select>
+                            <label class="filter-label">
+                                學年度
+                                <button
+                                    v-if="years.length > 1"
+                                    type="button"
+                                    class="filter-mini-btn"
+                                    @click="toggleAllYears"
+                                >{{ allYearsSelected ? '全部取消' : '全選' }}</button>
+                            </label>
+                            <div class="year-chip-group">
+                                <label
+                                    v-for="year in years"
+                                    :key="year"
+                                    class="year-chip"
+                                    :class="{ active: selectedYears.includes(year) }"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        :value="year"
+                                        :checked="selectedYears.includes(year)"
+                                        @change="toggleYear(year)"
+                                    />
+                                    <span>{{ year }}</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="selection-stats">
@@ -124,7 +143,7 @@ const LessonSelector = {
             publishers: [],
             years: [],
             selectedPublisher: '',
-            selectedYear: '',
+            selectedYears: [],
             activeTab: 'lessons',
             isLoading: true,
 
@@ -160,9 +179,12 @@ const LessonSelector = {
         filteredRawData() {
             return this.rawData.filter(item => {
                 const matchPublisher = !this.selectedPublisher || item.publisher === this.selectedPublisher;
-                const matchYear = !this.selectedYear || item.tw_year === this.selectedYear;
+                const matchYear = this.selectedYears.length === 0 || this.selectedYears.includes(item.tw_year);
                 return matchPublisher && matchYear;
             });
+        },
+        allYearsSelected() {
+            return this.years.length > 0 && this.selectedYears.length === this.years.length;
         },
         // Group the filtered data
         groupedData() {
@@ -181,9 +203,7 @@ const LessonSelector = {
                     }
 
                     const lessons = book.lessons.map(lesson => {
-                        const parts = lesson.parts || {};
-                        const pa = parts.phonetic_analysis || {};
-                        const ks = parts.key_sentences || {};
+                        const n = DataService.normalizeParts(lesson);
                         return {
                             id: DataService.createLessonId(
                                 group.publisher,
@@ -194,12 +214,12 @@ const LessonSelector = {
                             ),
                             chapter: lesson.chapter,
                             title: lesson.title,
-                            hasSimilarShapes: Array.isArray(pa.similar_shapes) && pa.similar_shapes.length > 0,
-                            hasPolyphonic: Array.isArray(pa.multiple_phonetics) && pa.multiple_phonetics.length > 0,
-                            hasIdioms: Array.isArray(parts.extended_idioms) && parts.extended_idioms.length > 0,
+                            hasSimilarShapes: n.similarShapes.length > 0,
+                            hasPolyphonic: n.multiplePhonetics.length > 0,
+                            hasIdioms: n.idioms.length > 0,
                             hasSentencePatterns:
-                                (Array.isArray(ks.phrase_practice) && ks.phrase_practice.length > 0) ||
-                                (Array.isArray(ks.sentence_practice) && ks.sentence_practice.length > 0)
+                                (Array.isArray(n.keySentences.phrase_practice) && n.keySentences.phrase_practice.length > 0) ||
+                                (Array.isArray(n.keySentences.sentence_practice) && n.keySentences.sentence_practice.length > 0)
                         };
                     });
 
@@ -240,7 +260,7 @@ const LessonSelector = {
     },
     watch: {
         selectedPublisher() { this._saveSelectorState(); },
-        selectedYear() { this._saveSelectorState(); },
+        selectedYears: { deep: true, handler() { this._saveSelectorState(); } },
     },
     methods: {
         // Persist expand/filter state
@@ -249,19 +269,39 @@ const LessonSelector = {
                 sessionStorage.setItem('selectorState', JSON.stringify({
                     expandedGroups: this.expandedGroups,
                     selectedPublisher: this.selectedPublisher,
-                    selectedYear: this.selectedYear
+                    selectedYears: this.selectedYears
                 }));
             } catch (e) { /* ignore */ }
         },
         _restoreSelectorState() {
             try {
                 const saved = sessionStorage.getItem('selectorState');
-                if (!saved) return;
+                if (!saved) return false;
                 const state = JSON.parse(saved);
                 if (state.expandedGroups) this.expandedGroups = state.expandedGroups;
                 if (state.selectedPublisher) this.selectedPublisher = state.selectedPublisher;
-                if (state.selectedYear) this.selectedYear = state.selectedYear;
-            } catch (e) { /* ignore */ }
+                // Backward-compat: older sessions stored a single selectedYear string
+                if (Array.isArray(state.selectedYears)) {
+                    this.selectedYears = state.selectedYears.filter(y => this.years.includes(y));
+                } else if (typeof state.selectedYear === 'string' && this.years.includes(state.selectedYear)) {
+                    this.selectedYears = [state.selectedYear];
+                }
+                return true;
+            } catch (e) { return false; }
+        },
+
+        toggleYear(year) {
+            const set = new Set(this.selectedYears);
+            if (set.has(year)) set.delete(year); else set.add(year);
+            this.selectedYears = this.years.filter(y => set.has(y));
+        },
+
+        toggleAllYears() {
+            if (this.allYearsSelected) {
+                this.selectedYears = [];
+            } else {
+                this.selectedYears = [...this.years];
+            }
         },
 
         // Convert Chinese numerals to numbers for sorting
@@ -302,12 +342,14 @@ const LessonSelector = {
             if (this.publishers.length > 0) {
                 this.selectedPublisher = this.publishers[0];
             }
-            if (this.years.length > 0) {
-                this.selectedYear = this.years[0];
-            }
 
-            // Restore saved state (overrides defaults)
-            this._restoreSelectorState();
+            // Restore saved state — returns false when no prior state exists
+            const restored = this._restoreSelectorState();
+
+            // Only apply the "all years" default when the user has no prior selection
+            if (!restored) {
+                this.selectedYears = [...this.years];
+            }
         },
 
         toggleGroup(groupId) {
