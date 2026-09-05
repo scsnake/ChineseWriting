@@ -290,6 +290,16 @@ const LessonSelector = {
             } catch (e) { return false; }
         },
 
+        // Current Taiwan 學年度 as a string of the ROC year.
+        // 學年度 N covers July (CE 1911+N) through June (CE 1912+N).
+        currentTwYear() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // 1-12
+            const twYear = (month >= 7) ? year - 1911 : year - 1912;
+            return String(twYear);
+        },
+
         toggleYear(year) {
             const set = new Set(this.selectedYears);
             if (set.has(year)) set.delete(year); else set.add(year);
@@ -346,9 +356,16 @@ const LessonSelector = {
             // Restore saved state — returns false when no prior state exists
             const restored = this._restoreSelectorState();
 
-            // Only apply the "all years" default when the user has no prior selection
+            // On a fresh visit, default to the current Taiwan 學年度 (falls back
+            // to the newest available year, then all years, if the exact match
+            // isn't in the dataset).
             if (!restored) {
-                this.selectedYears = [...this.years];
+                const currentYear = this.currentTwYear();
+                if (this.years.includes(currentYear)) {
+                    this.selectedYears = [currentYear];
+                } else if (this.years.length > 0) {
+                    this.selectedYears = [this.years[0]];
+                }
             }
         },
 
