@@ -267,6 +267,7 @@ const LessonSelector = {
         _saveSelectorState() {
             try {
                 sessionStorage.setItem('selectorState', JSON.stringify({
+                    _v: 2,
                     expandedGroups: this.expandedGroups,
                     selectedPublisher: this.selectedPublisher,
                     selectedYears: this.selectedYears
@@ -280,11 +281,14 @@ const LessonSelector = {
                 const state = JSON.parse(saved);
                 if (state.expandedGroups) this.expandedGroups = state.expandedGroups;
                 if (state.selectedPublisher) this.selectedPublisher = state.selectedPublisher;
-                // Backward-compat: older sessions stored a single selectedYear string
+                // Only honor a stored year selection if the state was saved after
+                // the current-year-default rollout. Older state (no _v) is likely
+                // the "all years" default — treat as unrestored so loadData falls
+                // through to the current-year default. Expanded groups and
+                // publisher above are still preserved.
+                if (state._v !== 2) return false;
                 if (Array.isArray(state.selectedYears)) {
                     this.selectedYears = state.selectedYears.filter(y => this.years.includes(y));
-                } else if (typeof state.selectedYear === 'string' && this.years.includes(state.selectedYear)) {
-                    this.selectedYears = [state.selectedYear];
                 }
                 return true;
             } catch (e) { return false; }
