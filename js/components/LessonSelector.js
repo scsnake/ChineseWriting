@@ -96,6 +96,12 @@ const LessonSelector = {
                                 <div class="lesson-label">
                                     <span class="lesson-chapter">{{ lesson.chapter }}</span>
                                     <span class="lesson-title">{{ lesson.title }}</span>
+                                    <span class="lesson-feature-badges">
+                                        <span v-if="lesson.hasSimilarShapes" class="lesson-badge" title="含形近字辨析">形</span>
+                                        <span v-if="lesson.hasPolyphonic" class="lesson-badge" title="含多音字">音</span>
+                                        <span v-if="lesson.hasIdioms" class="lesson-badge" title="含延伸成語">成</span>
+                                        <span v-if="lesson.hasSentencePatterns" class="lesson-badge" title="含句型／短語練習">句</span>
+                                    </span>
                                 </div>
                             </label>
                         </div>
@@ -174,17 +180,28 @@ const LessonSelector = {
                         this.expandedGroups[key] = false;
                     }
 
-                    const lessons = book.lessons.map(lesson => ({
-                        id: DataService.createLessonId(
-                            group.publisher,
-                            group.tw_year,
-                            book.grade,
-                            book.semester,
-                            lesson.chapter
-                        ),
-                        chapter: lesson.chapter,
-                        title: lesson.title
-                    }));
+                    const lessons = book.lessons.map(lesson => {
+                        const parts = lesson.parts || {};
+                        const pa = parts.phonetic_analysis || {};
+                        const ks = parts.key_sentences || {};
+                        return {
+                            id: DataService.createLessonId(
+                                group.publisher,
+                                group.tw_year,
+                                book.grade,
+                                book.semester,
+                                lesson.chapter
+                            ),
+                            chapter: lesson.chapter,
+                            title: lesson.title,
+                            hasSimilarShapes: Array.isArray(pa.similar_shapes) && pa.similar_shapes.length > 0,
+                            hasPolyphonic: Array.isArray(pa.multiple_phonetics) && pa.multiple_phonetics.length > 0,
+                            hasIdioms: Array.isArray(parts.extended_idioms) && parts.extended_idioms.length > 0,
+                            hasSentencePatterns:
+                                (Array.isArray(ks.phrase_practice) && ks.phrase_practice.length > 0) ||
+                                (Array.isArray(ks.sentence_practice) && ks.sentence_practice.length > 0)
+                        };
+                    });
 
                     // Sort lessons
                     lessons.sort((a, b) => {

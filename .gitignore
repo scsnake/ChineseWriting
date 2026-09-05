@@ -16,3 +16,12 @@ project_key.json
 
 # Cached Payloads
 payloads/
+
+# Original Textbooks
+original_textbooks/
+國重三上/
+國重*/
+
+# Data backups
+*.json.bak
+scratch/

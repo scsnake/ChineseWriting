@@ -61,7 +61,12 @@ const TestEngine = {
 
         for (let gi = 0; gi < shuffledGroups.length; gi++) {
             const { group, lessonId, lessonTitle } = shuffledGroups[gi];
-            const groupCharsKey = group.map(i => i.character.match(/^(.+?)\(/)?.[1]).join('');
+            // Order-independent groupId so persisted mistakes survive a reordered similar_shapes group
+            const groupCharsKey = group
+                .map(i => i.character.match(/^(.+?)\(/)?.[1])
+                .filter(Boolean)
+                .sort()
+                .join('');
             const groupId = `similar-${groupCharsKey}`;
 
             for (const item of group) {
@@ -185,19 +190,16 @@ const TestEngine = {
     },
 
     // Select best context word for display
+    // Prefer: 2-char word containing targetChar > any word containing targetChar > 2-char word > first > targetChar
     selectContextWord(targetChar, words) {
-        if (!words || words.length === 0) {
-            return targetChar;
-        }
-
-        // Prefer 2-character words
-        const twoCharWords = words.filter(w => w.length === 2);
-        if (twoCharWords.length > 0) {
-            return twoCharWords[0];
-        }
-
-        // Otherwise use first available word
-        return words[0];
+        if (!words || words.length === 0) return targetChar;
+        const hasTarget = w => targetChar && w.includes(targetChar);
+        const twoCharWithTarget = words.find(w => w.length === 2 && hasTarget(w));
+        if (twoCharWithTarget) return twoCharWithTarget;
+        const anyWithTarget = words.find(hasTarget);
+        if (anyWithTarget) return anyWithTarget;
+        const twoChar = words.find(w => w.length === 2);
+        return twoChar || words[0];
     },
 
     // Shuffle array using Fisher-Yates algorithm

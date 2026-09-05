@@ -35,7 +35,15 @@ const IdiomTestPage = {
                                 <span class="idiom-code-badge">{{ entry.code }}</span>
                                 <span class="idiom-legend-text">
                                     <span class="idiom-full">{{ entry.idiomText }}</span>
-                                    <span class="idiom-explanation">{{ entry.explanation }}</span>
+                                    <span class="idiom-explanation">
+                                        {{ getExplanationDisplay(entry) }}
+                                        <button
+                                            v-if="isLongExplanation(entry)"
+                                            @click="toggleExplanation(entry.code)"
+                                            class="idiom-explanation-toggle"
+                                            type="button"
+                                        >{{ expandedExplanations[entry.code] ? '收合' : '展開' }}</button>
+                                    </span>
                                 </span>
                             </div>
                         </div>
@@ -113,7 +121,9 @@ const IdiomTestPage = {
             questions: [],
             userAnswers: {},
             answered: false,
-            loadError: null
+            loadError: null,
+            expandedExplanations: {},
+            explanationLimit: 30
         };
     },
 
@@ -194,6 +204,23 @@ const IdiomTestPage = {
         getLabelForCode(code) {
             const entry = this.codeMap.find(e => e.code === code);
             return entry ? `${entry.code}．${entry.idiomText}` : code;
+        },
+
+        isLongExplanation(entry) {
+            return (entry.explanation || '').length > this.explanationLimit;
+        },
+
+        getExplanationDisplay(entry) {
+            const text = entry.explanation || '';
+            if (this.expandedExplanations[entry.code] || !this.isLongExplanation(entry)) return text;
+            return text.slice(0, this.explanationLimit) + '…';
+        },
+
+        toggleExplanation(code) {
+            this.expandedExplanations = {
+                ...this.expandedExplanations,
+                [code]: !this.expandedExplanations[code]
+            };
         },
 
         async revealAnswers() {
