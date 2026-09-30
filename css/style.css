@@ -1133,8 +1133,11 @@ canvas {
 
 @media (max-width: 767px) {
     /* body is height:auto on mobile (for home page scrolling), so
-       100% won't resolve to viewport height — pin explicitly */
-    .test-page-shell {
+       100% won't resolve to viewport height — pin explicitly.
+       flex:none (with #app for specificity) — otherwise `#app > * { flex: 1 1 0% }`
+       wins over the height and the page grows past the screen, hiding the footer */
+    #app > .test-page-shell {
+        flex: none;
         height: 100dvh;
     }
 }
