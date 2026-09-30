@@ -118,12 +118,12 @@ body {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #5568d3; /* one shade under the #667eea brand so white text reads (4.9:1) */
     color: white;
 }
 
 .btn-primary:active {
-    background: #5568d3;
+    background: #4553c0;
     transform: scale(0.98);
 }
 
@@ -802,7 +802,7 @@ body {
 
 .btn-warning {
     background: #f1c40f;
-    color: #fff;
+    color: #333; /* white on yellow was 1.7:1 */
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
@@ -1438,22 +1438,22 @@ canvas {
    Additional Button Variants
    ============================================= */
 .btn-teal {
-    background: #1abc9c;
+    background: #117a65; /* was #1abc9c (2.4:1 with white) */
     color: white;
 }
 
 .btn-teal:active {
-    background: #17a589;
+    background: #0e6655;
     transform: scale(0.98);
 }
 
 .btn-info {
-    background: #3498db;
+    background: #2471a3; /* was #3498db (3.2:1 with white) */
     color: white;
 }
 
 .btn-info:active {
-    background: #2980b9;
+    background: #1f618d;
     transform: scale(0.98);
 }
 
@@ -1484,12 +1484,12 @@ canvas {
 }
 
 .btn-reading {
-    background: #16a085;
+    background: #0e6655; /* was #16a085 (3.3:1 with white) */
     color: white;
 }
 
 .btn-reading:active {
-    background: #117a65;
+    background: #0b5345;
     transform: scale(0.98);
 }
 
