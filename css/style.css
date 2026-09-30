@@ -259,9 +259,10 @@ body {
 }
 
 .filter-mini-btn {
-    font-size: 12px;
-    padding: 2px 10px;
-    border-radius: 12px;
+    font-size: 14px;
+    padding: 6px 14px;
+    min-height: 34px;
+    border-radius: 17px;
     border: 1px solid #d1d5db;
     background: white;
     color: #4b5563;
@@ -368,6 +369,7 @@ body {
 
 .config-input-small {
     width: 100%;
+    min-height: 44px;
     padding: 8px;
     font-size: 16px;
     border: 1px solid #ddd;
@@ -393,7 +395,8 @@ body {
 .radio-item-small {
     display: flex;
     align-items: center;
-    font-size: 15px;
+    min-height: 44px; /* whole row is the tap target */
+    font-size: 16px;
     cursor: pointer;
 }
 
@@ -1977,8 +1980,8 @@ canvas {
 .idiom-explanation-toggle {
     display: inline-block;
     margin-left: 4px;
-    padding: 0 6px;
-    font-size: 12px;
+    padding: 4px 10px;
+    font-size: 13px;
     color: var(--color-primary, #007aff);
     background: none;
     border: 1px solid currentColor;
@@ -2056,6 +2059,7 @@ canvas {
 
 .idiom-select {
     font-size: 16px;
+    min-height: 44px;
     padding: 6px 10px;
     border: 2px solid #8e44ad;
     border-radius: 8px;
