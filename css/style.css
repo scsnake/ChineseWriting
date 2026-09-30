@@ -127,6 +127,12 @@ body {
     transform: scale(0.98);
 }
 
+/* Pale like the other disabled buttons, so "nothing selected yet" is visible */
+.btn-primary:disabled {
+    background: #b3bdf3;
+    cursor: not-allowed;
+}
+
 .btn-secondary {
     background: #e0e0e0;
     color: #333;
@@ -368,6 +374,16 @@ body {
     border-radius: 6px;
 }
 
+/* Shown above the disabled start buttons until a lesson is picked */
+.config-hint {
+    background: #eef2ff;
+    color: #3f51b5;
+    font-size: 15px;
+    text-align: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
 .radio-group-sidebar {
     display: flex;
     flex-direction: column;
@@ -528,6 +544,30 @@ body {
 
     .lesson-selector h2 {
         display: block;
+    }
+}
+
+/* "下一步：測驗設定 →" — floats over the lesson list on the narrow-screen lessons tab */
+.mobile-next-btn {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-next-btn {
+        display: block;
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        z-index: 50;
+        min-height: 52px;
+        font-size: 17px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Keep the last lesson clear of the floating button */
+    .lesson-selector[data-mobile-tab="lessons"] .selection-content {
+        padding-bottom: 88px;
     }
 }
 

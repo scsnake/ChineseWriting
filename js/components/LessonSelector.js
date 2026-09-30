@@ -127,6 +127,14 @@ const LessonSelector = {
                     </div>
                 </div>
             </div>
+
+            <!-- Narrow screens: the start buttons are on the other tab, so show the next step
+                 (outside the container so its touch handlers don't start a box-select) -->
+            <button
+                v-if="activeTab === 'lessons' && selectedLessons.length > 0"
+                class="btn btn-primary mobile-next-btn"
+                @click="goToConfigTab"
+            >下一步：測驗設定 →</button>
         </div>
     `,
     props: {
@@ -263,6 +271,11 @@ const LessonSelector = {
         selectedYears: { deep: true, handler() { this._saveSelectorState(); } },
     },
     methods: {
+        goToConfigTab() {
+            this.activeTab = 'config';
+            window.scrollTo(0, 0); // the page itself scrolls on narrow screens
+        },
+
         // Persist expand/filter state
         _saveSelectorState() {
             try {

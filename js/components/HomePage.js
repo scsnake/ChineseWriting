@@ -39,9 +39,13 @@ const HomePage = {
                                     </label>
                                 </div>
                             </div>
-                            
-                            <button 
-                                @click="startTest" 
+
+                            <p v-if="selectedLessons.length === 0" class="config-hint">
+                                請先勾選要練習的課文
+                            </p>
+
+                            <button
+                                @click="startTest"
                                 :disabled="!canStartTest"
                                 class="btn btn-primary btn-full mt-10"
                             >
