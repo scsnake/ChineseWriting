@@ -256,6 +256,10 @@ const IdiomTestPage = {
         },
 
         goHome() {
+            // Choices are only saved when 答案 is pressed, so ask before throwing them away
+            const hasChoices = Object.values(this.userAnswers).some(v => v);
+            if (!this.answered && hasChoices
+                && !window.confirm('要離開嗎？\n還沒按「答案」，選好的答案不會保存。')) return;
             this.$router.push({ name: 'home' });
         }
     }

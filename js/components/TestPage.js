@@ -182,7 +182,17 @@ const TestPage = {
         },
 
         getDisplay(q) { return TestEngine.getQuestionDisplay(q); },
-        goHome() { this.$router.push({ name: 'home' }); },
+        async goHome() {
+            // Leaving can't be resumed, so ask first once anything has been written
+            if (this.hasWrittenAnything()
+                && !window.confirm('要離開測驗嗎？\n已寫的答案會留在歷史紀錄，但這次測驗不能接著寫。')) return;
+            if (this.hasWrittenAnything()) await this.saveGroupAnswers(); // keep this page's answers too
+            this.$router.push({ name: 'home' });
+        },
+        hasWrittenAnything() {
+            return Object.values(this.answersData).some(strokes => strokes && strokes.length > 0)
+                || Object.values(this.questionCanvases).some(c => c && !c.isEmpty());
+        },
 
         // ── marks ──
         async checkStarStatusForCurrentGroup() {
