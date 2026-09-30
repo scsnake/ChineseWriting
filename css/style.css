@@ -1529,15 +1529,19 @@ canvas {
     cursor: not-allowed;
 }
 
-.btn-editor {
-    background: #2c3e50;
-    color: white;
-    font-size: 14px;
+/* 編輯詞庫 link at the bottom of the 歷史紀錄 list (parents only) */
+.parent-tools {
+    text-align: center;
+    margin-top: 24px;
 }
 
-.btn-editor:active {
-    background: #1a252f;
-    transform: scale(0.98);
+.parent-tool-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    color: #555;
+    font-size: 15px;
 }
 
 .btn-reading {

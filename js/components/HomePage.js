@@ -97,13 +97,6 @@ const HomePage = {
                             >
                                 歷史紀錄
                             </button>
-
-                            <button 
-                                @click="openEditor" 
-                                class="btn btn-editor btn-full mt-10"
-                            >
-                                ✏️ 編輯詞庫
-                            </button>
                         </div>
                     </template>
                 </lesson-selector>
@@ -304,10 +297,6 @@ const HomePage = {
                 name: 'reading',
                 params: { lessonIds: this.selectedLessons }
             });
-        },
-
-        openEditor() {
-            window.open('editor.html', '_blank');
         },
 
         async startIdiomTest() {

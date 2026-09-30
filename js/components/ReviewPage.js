@@ -53,6 +53,11 @@ const ReviewPage = {
                             </button>
                         </div>
                     </div>
+
+                    <!-- Parent tool, kept off the children's home screen -->
+                    <div class="parent-tools">
+                        <a href="editor.html" target="_blank" rel="noopener" class="parent-tool-link">✏️ 編輯詞庫（家長用）</a>
+                    </div>
                 </div>
                 
                 <!-- Session Detail View -->
