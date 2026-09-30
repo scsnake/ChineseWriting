@@ -251,7 +251,8 @@ const TestPage = {
                 // Save strokes for navigation persistence
                 this.answersData[q.id] = c.getStrokes();
 
-                if (c.isEmpty() && !q.isStarred) continue;
+                // Save blanks too (blob = null) so skipped questions show as 未作答 in the
+                // results/history, and an answer erased after revisiting replaces the old one
                 try {
                     const blob = c.isEmpty() ? null : await c.getBlob();
                     await StorageService.saveAnswer(

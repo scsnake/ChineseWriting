@@ -992,6 +992,20 @@ canvas {
     background: white;
 }
 
+/* Blank answer: same square frame as a handwriting image, so skipped questions stand out */
+.no-answer-placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    background: #fafafa;
+    color: #767676;
+    font-size: 18px;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;

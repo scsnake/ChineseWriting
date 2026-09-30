@@ -79,7 +79,7 @@ const ReviewPage = {
                                     class="answer-image"
                                 />
                                 <div v-else class="no-answer-placeholder">
-                                    (未作答，已標記)
+                                    未作答
                                 </div>
                             </div>
 
