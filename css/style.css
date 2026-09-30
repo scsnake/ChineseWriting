@@ -685,6 +685,15 @@ body {
     user-select: none;
 }
 
+/* Narrow screens: let the badges drop to their own line instead of squeezing
+   the title down to one character per line (no change when everything fits) */
+@media (max-width: 767px) {
+    .lesson-label {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+}
+
 /* Test Configuration */
 .test-config {
     background: #f8f8f8;
