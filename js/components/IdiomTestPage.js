@@ -237,7 +237,9 @@ const IdiomTestPage = {
                             q.id,
                             'idiom',
                             q.idiomText,      // correct idiom text
-                            this.userAnswers[q.id] || '(未填)', // user's selected code/label
+                            // Save the label the child saw ("E．投鼠忌器"), not the bare code —
+                            // history can only tell right from wrong by the idiom text
+                            this.userAnswers[q.id] ? this.getLabelForCode(this.userAnswers[q.id]) : '(未填)',
                             q.blankedSentence, // context sentence
                             null              // no canvas data
                         );

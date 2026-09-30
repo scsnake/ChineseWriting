@@ -131,17 +131,7 @@ const ReviewPage = {
             // For idiom tests, only show wrong answers in history
             const session = this.sessions.find(s => s.id === this.selectedSessionId);
             if (session && session.testType === 'idiom') {
-                // targetZhuyin stores our selected label/code, targetChar stores the correct idiom text
-                // Actually in my IdiomTestPage.saveAnswer, I stored:
-                // targetChar: q.idiomText (correct)
-                // targetZhuyin: user's selection (e.g. "A．成語")
-                // Let's assume we want to check if user selected the right code.
-                // However, easier is to just compare the full idiom string if targetZhuyin contains it.
-                // Wait, in IdiomTestPage.js revealAnswers, I saved user selection to targetZhuyin.
-                return this.answers.filter(a => {
-                    // If user selection (targetZhuyin) doesn't contain the correct one (targetChar)
-                    return !a.targetZhuyin.includes(a.targetChar);
-                });
+                return this.answers.filter(a => !this.isIdiomCorrect(a));
             }
             return this.answers;
         },
@@ -223,12 +213,20 @@ const ReviewPage = {
             this.answers = [];
         },
 
+        // Idiom answers: targetChar is the correct idiom, targetZhuyin the child's choice
+        // as its label ("E．投鼠忌器") or "(未填)". Records saved before the label fix hold
+        // only the letter ("E"), which can't be judged, so they still count as wrong.
+        isIdiomCorrect(answer) {
+            const choice = answer.targetZhuyin || '';
+            return choice === answer.targetChar || choice.endsWith('．' + answer.targetChar);
+        },
+
         idiomSentenceParts(answer) {
             const BLANK = '＿＿＿＿';
             const sentence = answer.contextWord;
             const userChoice = answer.targetZhuyin;
             const correctText = answer.targetChar;
-            const isCorrect = userChoice.includes(correctText);
+            const isCorrect = this.isIdiomCorrect(answer);
             const idx = sentence.indexOf(BLANK);
             const before = idx >= 0 ? sentence.slice(0, idx) : sentence;
             const after = idx >= 0 ? sentence.slice(idx + BLANK.length) : '';
