@@ -1226,14 +1226,14 @@ canvas {
 
 .test-mode-label {
     font-size: 14px;
-    color: #888;
+    color: #555; /* was #888 (3.1:1 on the gray header) */
     font-weight: 500;
 }
 
 .test-progress {
     font-size: 20px;
     font-weight: 600;
-    color: #667eea;
+    color: #4c5fd5; /* was #667eea (3.2:1 on the gray header) */
 }
 
 .test-header-marks {
@@ -1265,8 +1265,8 @@ canvas {
 .star-btn {
     background: none;
     border: none;
-    color: #aaa;
-    /* ☆ empty = muted gray */
+    color: #767676;
+    /* ☆ empty = muted gray (was #aaa, 2.2:1) */
     font-size: 24px;
     line-height: 1;
     flex-shrink: 0;
