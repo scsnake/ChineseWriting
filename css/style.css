@@ -1032,6 +1032,13 @@ canvas {
     margin-bottom: 12px;
 }
 
+/* The correct answer: large and dark enough to read 注音 tone marks */
+.answer-key {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
 .answer-image {
     width: 100%;
     height: auto;

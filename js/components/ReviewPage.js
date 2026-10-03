@@ -71,11 +71,15 @@ const ReviewPage = {
                             <!-- Standard Char/Zhuyin Answer -->
                             <div v-if="answer.questionType !== 'idiom'" class="answer-card">
                                 <div class="answer-question">
-                                    {{ answer.contextWord }}
+                                    <span
+                                        v-for="(part, pi) in questionParts(answer)"
+                                        :key="pi"
+                                        :class="{ 'test-item': part.isTarget }"
+                                    >{{ part.text }}</span>
                                 </div>
                                 <div class="answer-type">
-                                    {{ answer.questionType === 'char' ? '寫國字' : '寫注音' }}
-                                    ({{ answer.targetChar }})
+                                    {{ writesZhuyin(answer) ? '寫注音' : '寫國字' }}
+                                    (<span class="answer-key">{{ writesZhuyin(answer) ? answer.targetZhuyin : answer.targetChar }}</span>)
                                 </div>
                                 <img 
                                     v-if="answer.imageUrl"
@@ -204,6 +208,17 @@ const ReviewPage = {
             } finally {
                 this.loading = false;
             }
+        },
+
+        // 看國字寫注音 and 多音字 ask for 注音; 看注音寫國字 and 形近字 ask for the character
+        writesZhuyin(answer) {
+            return answer.questionType === 'zhuyin' || answer.questionType === 'polyphonic_zhuyin';
+        },
+
+        // Split the word so the asked character can be underlined, as on the test page
+        questionParts(answer) {
+            const word = answer.contextWord || answer.targetChar || '';
+            return [...word].map(ch => ({ text: ch, isTarget: ch === answer.targetChar }));
         },
 
         backToList() {
