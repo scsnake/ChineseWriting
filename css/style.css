@@ -406,6 +406,11 @@ body {
     height: 18px;
 }
 
+/* 「（共 N 題）」 beside 全部複習 */
+.config-count-note {
+    color: #555;
+}
+
 /* =============================================
    Mobile Tab Bar (hidden on desktop)
    ============================================= */

@@ -15,14 +15,24 @@ const HomePage = {
                             
                             <div class="config-row-sidebar">
                                 <label class="config-label-small">題數</label>
-                                <input 
-                                    v-model.number="testCount" 
-                                    type="number" 
-                                    min="1" 
-                                    max="50"
-                                    class="config-input-small"
-                                    placeholder="輸入題數"
-                                />
+                                <div class="radio-group-sidebar">
+                                    <label class="radio-item-small">
+                                        <input type="radio" value="random" v-model="countMode"> 隨機抽題
+                                    </label>
+                                    <input
+                                        v-if="countMode === 'random'"
+                                        v-model.number="testCount"
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        class="config-input-small"
+                                        placeholder="輸入題數"
+                                    />
+                                    <label class="radio-item-small">
+                                        <input type="radio" value="full" v-model="countMode"> 全部複習
+                                        <span v-if="availableCount > 0" class="config-count-note">（共 {{ availableCount }} 題）</span>
+                                    </label>
+                                </div>
                             </div>
                             
                             <div class="config-row-sidebar">
@@ -117,6 +127,8 @@ const HomePage = {
         return {
             selectedLessons: [],
             testCount: 20,
+            countMode: 'random', // 'random' = testCount picked at random, 'full' = every character
+            availableCount: 0,
             testType: 'char',
             enableDragSelect: false,
             toast: {
@@ -127,7 +139,8 @@ const HomePage = {
     },
     computed: {
         canStartTest() {
-            return this.selectedLessons.length > 0 && this.testCount > 0;
+            return this.selectedLessons.length > 0
+                && (this.countMode === 'full' || this.testCount > 0);
         }
     },
     mounted() {
@@ -138,13 +151,16 @@ const HomePage = {
                 const state = JSON.parse(saved);
                 if (state.selectedLessons) this.selectedLessons = state.selectedLessons;
                 if (state.testCount) this.testCount = state.testCount;
+                if (state.countMode) this.countMode = state.countMode;
                 if (state.testType) this.testType = state.testType;
             }
         } catch (e) { /* ignore */ }
+        this._updateAvailableCount();
     },
     watch: {
-        selectedLessons(v) { this._saveState(); },
+        selectedLessons(v) { this._saveState(); this._updateAvailableCount(); },
         testCount(v) { this._saveState(); },
+        countMode(v) { this._saveState(); },
         testType(v) { this._saveState(); },
     },
     methods: {
@@ -153,9 +169,18 @@ const HomePage = {
                 sessionStorage.setItem('homepageState', JSON.stringify({
                     selectedLessons: this.selectedLessons,
                     testCount: this.testCount,
+                    countMode: this.countMode,
                     testType: this.testType
                 }));
             } catch (e) { /* ignore */ }
+        },
+        // Count the characters 全部複習 would cover; ignore replies for an older selection
+        async _updateAvailableCount() {
+            const token = this._countToken = (this._countToken || 0) + 1;
+            try {
+                const chars = await DataService.getCharactersFromLessons(this.selectedLessons);
+                if (token === this._countToken) this.availableCount = chars.length;
+            } catch (e) { /* words.json failed to load; the count just stays hidden */ }
         },
         async startTest() {
             if (!this.canStartTest) {
@@ -167,7 +192,7 @@ const HomePage = {
                 // Generate test questions
                 const questions = await TestEngine.generateTest(
                     this.selectedLessons,
-                    this.testCount,
+                    this.countMode === 'full' ? Infinity : this.testCount,
                     this.testType
                 );
 

@@ -1,6 +1,7 @@
 // Test Engine for generating questions
 const TestEngine = {
     // Generate test questions (vocabulary)
+    // testCount: how many to pick at random, or Infinity for every character (全部複習)
     async generateTest(lessonIds, testCount, testType) {
         // Get all characters from selected lessons
         const characters = await DataService.getCharactersFromLessons(lessonIds);
